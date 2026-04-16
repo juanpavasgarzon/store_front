@@ -1,5 +1,10 @@
-import { createNavigation } from 'next-intl/navigation';
-import { routing } from './routing';
+export {
+  useRouter,
+  usePathname,
+  redirect,
+} from 'next/navigation';
+export { default as Link } from 'next/link';
 
-export const { Link, redirect, usePathname, useRouter, getPathname } =
-  createNavigation(routing);
+export function getPathname({ href }: { href: string }): string {
+  return href;
+}

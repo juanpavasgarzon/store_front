@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import QueryProvider from "./providers/QueryProvider";
+import ThemeProvider from "./providers/ThemeProvider";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: {
@@ -8,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | Pavas Store",
   },
   description:
-    "Discover curated listings across all categories. Buy, sell, and connect in style.",
+    "Anuncios seleccionados en todas las categorías. Descubre artículos únicos, conecta con vendedores y compra con confianza.",
 };
 
 export default function RootLayout({
@@ -17,11 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es" className={cn("h-full", "font-sans", geist.variable)} suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        {/* Runs synchronously before paint — prevents theme flash.
-            next/script with strategy="beforeInteractive" is the correct way
-            to inject inline scripts in App Router without React 19 warnings. */}
         <Script id="theme-init" strategy="beforeInteractive">{`
           (function() {
             try {
@@ -35,7 +38,11 @@ export default function RootLayout({
           })();
         `}</Script>
       </head>
-      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
+        <QueryProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </QueryProvider>
+      </body>
     </html>
   );
 }

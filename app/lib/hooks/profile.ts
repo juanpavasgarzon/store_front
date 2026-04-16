@@ -5,7 +5,13 @@ import { queryKeys } from '../queryKeys';
 import { me } from '../api/me';
 import { clearTokens } from '../api/client';
 import { useToken } from './token';
-import type { RatingResponse } from '../types/social';
+
+interface UpdateProfilePayload {
+  name: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  city?: string | null;
+}
 
 export function useProfile() {
   const token = useToken();
@@ -15,7 +21,16 @@ export function useProfile() {
       if (!token) return null;
       try {
         const p = await me.getProfile(token);
-        return { name: p.name, role: p.role, email: p.email, id: p.id, permissions: p.permissions ?? [] };
+        return {
+          id: p.id,
+          name: p.name,
+          role: p.role,
+          email: p.email,
+          permissions: p.permissions ?? [],
+          phone: p.phone ?? null,
+          whatsapp: p.whatsapp ?? null,
+          city: p.city ?? null,
+        };
       } catch {
         clearTokens();
         return null;
@@ -27,21 +42,11 @@ export function useProfile() {
   });
 }
 
-export function useMyRatings(cursor?: string) {
-  const token = useToken();
-  return useQuery({
-    queryKey: ['myRatings', cursor ?? ''] as const,
-    queryFn: (): Promise<import('../types/pagination').PaginationResponse<RatingResponse>> =>
-      me.getRatings(token!, cursor),
-    enabled: !!token,
-  });
-}
-
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   const token = useToken();
   return useMutation({
-    mutationFn: (name: string) => me.updateProfile(token!, name),
+    mutationFn: (payload: UpdateProfilePayload) => me.updateProfile(token!, payload),
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.profile, {
         id: updated.id,
@@ -49,6 +54,9 @@ export function useUpdateProfile() {
         email: updated.email,
         role: updated.role,
         permissions: updated.permissions ?? [],
+        phone: updated.phone ?? null,
+        whatsapp: updated.whatsapp ?? null,
+        city: updated.city ?? null,
       });
     },
   });

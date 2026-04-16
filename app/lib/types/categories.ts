@@ -1,3 +1,17 @@
+export type AttributeValueType = 'text' | 'number' | 'boolean' | 'select';
+
+export interface CategoryAttributeResponse {
+  id: string;
+  categoryId: string;
+  name: string;
+  key: string;
+  valueType: AttributeValueType;
+  options: string[];
+  isRequired: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CategoryResponse {
   id: string;
   name: string;
@@ -6,15 +20,5 @@ export interface CategoryResponse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface VariantResponse {
-  id: string;
-  categoryId: string;
-  name: string;
-  key: string;
-  valueType: 'text' | 'number' | 'boolean' | 'select';
-  options?: string[];
-  createdAt: string;
-  updatedAt: string;
+  attributes: CategoryAttributeResponse[];
 }

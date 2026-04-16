@@ -1,10 +1,11 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
-import { Link, usePathname, useRouter } from '../../i18n/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '../providers/ThemeProvider';
-import { clearTokens } from '../lib/api';
+import { clearTokens, getRefreshToken } from '../lib/api/client';
+import { auth } from '../lib/api/auth';
 import { useProfile } from '../lib/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import UserAvatar from './UserAvatar';
@@ -27,7 +28,6 @@ const iconBtn: React.CSSProperties = {
 };
 
 export default function Navbar() {
-  const t = useTranslations('nav');
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
@@ -44,23 +44,23 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = () => {
+    const refreshToken = getRefreshToken();
     clearTokens();
-    queryClient.removeQueries({ queryKey: ['profile'] });
-    queryClient.removeQueries({ queryKey: ['myListings'] });
-    queryClient.removeQueries({ queryKey: ['myAppointments'] });
-    queryClient.removeQueries({ queryKey: ['myContactRequests'] });
-    queryClient.removeQueries({ queryKey: ['myFavorites'] });
+    queryClient.clear();
     setMenuOpen(false);
-    router.push('/');
+    if (refreshToken) {
+      auth.logout(refreshToken).catch(() => undefined);
+    }
+    router.push('/listings');
   };
 
   // Panel + Favorites navigate to login if unauthenticated
   const handleProtectedNav = (href: string) => {
     setMenuOpen(false);
     if (!profile) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(href)}` as '/auth/login');
+      window.location.href = `/auth/login?redirect=${encodeURIComponent(href)}`;
     } else {
-      router.push(href as '/dashboard');
+      router.push(href as Parameters<typeof router.push>[0]);
     }
   };
 
@@ -124,7 +124,7 @@ export default function Navbar() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="hidden-mobile">
             {/* Browse */}
             <Link href="/listings" style={navLinkStyle(browseActive)}>
-              {t('browse')}
+              {'Explorar'}
             </Link>
 
             {/* Panel — always visible, auth-gated */}
@@ -156,7 +156,7 @@ export default function Navbar() {
             {/* Auth (desktop) */}
             {profile ? (
               <Link
-                href="/dashboard"
+                href="/profile"
                 className="hidden-mobile"
                 style={{
                   display: 'flex',
@@ -178,10 +178,10 @@ export default function Navbar() {
             ) : (
               <div style={{ display: 'flex', gap: 6 }} className="hidden-mobile">
                 <Link href="/auth/login" className="btn btn-ghost" style={{ padding: '7px 14px', fontSize: 13 }}>
-                  {t('signIn')}
+                  {'Iniciar sesión'}
                 </Link>
                 <Link href="/auth/register" className="btn btn-primary" style={{ padding: '7px 14px', fontSize: 13 }}>
-                  {t('join')}
+                  {'Registrarse'}
                 </Link>
               </div>
             )}
@@ -210,7 +210,7 @@ export default function Navbar() {
                 background: browseActive ? 'var(--bg-elevated)' : 'transparent',
               }}
             >
-              {t('browse')}
+              {'Explorar'}
             </Link>
 
             <button
@@ -240,8 +240,8 @@ export default function Navbar() {
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4, display: 'flex', gap: 8, paddingLeft: 16 }}>
               {profile ? (
                 <>
-                  <Link href="/dashboard" className="btn btn-outline" style={{ fontSize: 13 }} onClick={() => setMenuOpen(false)}>
-                    {profile.name.split(' ')[0]} · Panel
+                  <Link href="/profile" className="btn btn-outline" style={{ fontSize: 13 }} onClick={() => setMenuOpen(false)}>
+                    {profile.name.split(' ')[0]} · Perfil
                   </Link>
                   <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={handleLogout}>
                     Salir
@@ -250,10 +250,10 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link href="/auth/login" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setMenuOpen(false)}>
-                    {t('signIn')}
+                    {'Iniciar sesión'}
                   </Link>
                   <Link href="/auth/register" className="btn btn-primary" style={{ fontSize: 13 }} onClick={() => setMenuOpen(false)}>
-                    {t('join')}
+                    {'Registrarse'}
                   </Link>
                 </>
               )}

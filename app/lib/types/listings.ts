@@ -13,10 +13,20 @@ export interface ListingPhoto {
   thumbnailUrl: string | null;
 }
 
-export interface ListingVariant {
+export interface ListingSeller {
   id: string;
-  categoryVariantId: string;
-  categoryVariantKey: string;
+  name: string;
+  phone: string | null;
+  whatsapp: string | null;
+  city: string | null;
+}
+
+export interface ListingAttributeValue {
+  id: string;
+  attributeId: string;
+  attributeName: string;
+  attributeKey: string;
+  valueType: string;
   value: string;
 }
 
@@ -29,6 +39,7 @@ export interface ListingResponse {
   description: string;
   price: number;
   location: string;
+  city: string | null;
   sector: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -44,8 +55,9 @@ export interface ListingResponse {
     name: string | null;
     slug: string | null;
   };
+  seller?: ListingSeller;
   photos?: ListingPhoto[];
-  variants?: ListingVariant[];
+  attributeValues?: ListingAttributeValue[];
 }
 
 export interface ListingStatsResponse {
@@ -55,15 +67,5 @@ export interface ListingStatsResponse {
   viewsLast30Days: number;
   uniqueViewers: number;
   favoritesCount: number;
-  averageRating: number;
-  ratingsCount: number;
   contactRequestsCount: number;
-}
-
-export interface ListingPriceHistory {
-  id: string;
-  listingId: string;
-  price: string;
-  changedByUserId: string | null;
-  changedAt: string;
 }

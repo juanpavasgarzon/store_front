@@ -1,6 +1,4 @@
-// Backend (NestJS) runs on port 3000 — Next.js itself is on 3001.
-// NEXT_PUBLIC_API_URL must always be set in .env.local.
-const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1').replace(/\/$/, '');
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1').replace(/\/$/, '');
 
 // ─── Token helpers (client-side only) ────────────────────────────────────────
 
@@ -9,26 +7,28 @@ export function getAccessToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
+export function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('refreshToken');
+}
+
 export function setTokens(accessToken: string, refreshToken: string): void {
   localStorage.setItem('accessToken', accessToken);
   localStorage.setItem('refreshToken', refreshToken);
+  document.cookie = `accessToken=${accessToken}; path=/; SameSite=Lax; max-age=${7 * 24 * 3600}`;
 }
 
 export function clearTokens(): void {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
+  document.cookie = 'accessToken=; path=/; max-age=0';
 }
 
 // ─── Media URL resolver ───────────────────────────────────────────────────────
 
-/**
- * Converts a backend-relative photo path like "/api/v1/listings/{id}/photos/{file}"
- * into a fully-qualified URL. Already-absolute URLs are returned unchanged.
- */
 export function resolveMediaUrl(url: string | null | undefined): string {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  // Normalize legacy URLs stored without the /v1 version segment (e.g. /api/listings/…)
   const normalized = url.startsWith('/api/listings/')
     ? url.replace('/api/listings/', '/api/v1/listings/')
     : url;
@@ -52,7 +52,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Maps HTTP status codes to user-friendly messages in Spanish. */
 export function humanizeApiError(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 400) return err.message || 'Los datos enviados no son válidos.';
@@ -67,13 +66,52 @@ export function humanizeApiError(err: unknown): string {
   return 'Error desconocido.';
 }
 
+// ─── Token refresh ────────────────────────────────────────────────────────────
+
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function attemptTokenRefresh(): Promise<string | null> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        return null;
+      }
+      const res = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!res.ok) {
+        clearTokens();
+        return null;
+      }
+      const data = (await res.json()) as { accessToken: string; refreshToken: string };
+      setTokens(data.accessToken, data.refreshToken);
+      return data.accessToken;
+    } catch {
+      clearTokens();
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
 // ─── Core fetcher ─────────────────────────────────────────────────────────────
 
 export async function apiFetch<T>(
   path: string,
-  options: RequestInit & { token?: string; skipContentType?: boolean } = {},
+  options: RequestInit & { token?: string; skipContentType?: boolean; _retry?: boolean } = {},
 ): Promise<T> {
-  const { token, skipContentType, headers: _headers, ...rest } = options;
+  const { token, skipContentType, _retry, headers: _headers, ...rest } = options;
   const headers: Record<string, string> = {
     ...(skipContentType ? {} : { 'Content-Type': 'application/json' }),
     ...(_headers as Record<string, string>),
@@ -81,6 +119,19 @@ export async function apiFetch<T>(
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE_URL}${path}`, { ...rest, headers });
+
+  if (res.status === 401 && !_retry && token) {
+    const newToken = await attemptTokenRefresh();
+    if (newToken) {
+      return apiFetch<T>(path, { ...options, token: newToken, _retry: true });
+    }
+    clearTokens();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
+    throw new ApiError(401, 'Sesión expirada. Por favor inicia sesión nuevamente.');
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const b = body as { message?: string | string[]; error?: string };

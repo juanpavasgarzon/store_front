@@ -1,18 +1,18 @@
 import { apiFetch } from './client';
-import type { CategoryResponse, VariantResponse } from '../types/categories';
+import type { CategoryResponse, CategoryAttributeResponse } from '../types/categories';
 import type { PaginationResponse } from '../types/pagination';
 
 export const categories = {
   listPublic: (cursor?: string, limit = 50) => {
-    const q = new URLSearchParams({ limit: String(limit) });
-    if (cursor) q.set('cursor', cursor);
-    return apiFetch<PaginationResponse<CategoryResponse>>(`/categories/public?${q.toString()}`);
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (cursor) { query.set('cursor', cursor); }
+    return apiFetch<PaginationResponse<CategoryResponse>>(`/categories/public?${query.toString()}`);
   },
 
   list: (token: string, cursor?: string, limit = 50) => {
-    const q = new URLSearchParams({ limit: String(limit) });
-    if (cursor) q.set('cursor', cursor);
-    return apiFetch<PaginationResponse<CategoryResponse>>(`/categories?${q.toString()}`, { token });
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (cursor) { query.set('cursor', cursor); }
+    return apiFetch<PaginationResponse<CategoryResponse>>(`/categories?${query.toString()}`, { token });
   },
 
   get: (token: string, id: string) =>
@@ -27,19 +27,23 @@ export const categories = {
   delete: (token: string, id: string) =>
     apiFetch<void>(`/categories/${id}`, { method: 'DELETE', token }),
 
-  getVariants: (token: string, categoryId: string) =>
-    apiFetch<VariantResponse[]>(`/categories/${categoryId}/variants`, { token }),
+  // ── Attributes ──────────────────────────────────────────────────────────────
 
-  createVariant: (token: string, categoryId: string, data: object) =>
-    apiFetch<VariantResponse>(`/categories/${categoryId}/variants`, {
+  listAttributes: (categoryId: string) =>
+    apiFetch<CategoryAttributeResponse[]>(`/categories/${categoryId}/attributes`),
+
+  createAttribute: (token: string, categoryId: string, data: object) =>
+    apiFetch<CategoryAttributeResponse>(`/categories/${categoryId}/attributes`, {
       method: 'POST', body: JSON.stringify(data), token,
     }),
 
-  updateVariant: (token: string, categoryId: string, variantId: string, data: object) =>
-    apiFetch<VariantResponse>(`/categories/${categoryId}/variants/${variantId}`, {
+  updateAttribute: (token: string, categoryId: string, attributeId: string, data: object) =>
+    apiFetch<CategoryAttributeResponse>(`/categories/${categoryId}/attributes/${attributeId}`, {
       method: 'PATCH', body: JSON.stringify(data), token,
     }),
 
-  deleteVariant: (token: string, categoryId: string, variantId: string) =>
-    apiFetch<void>(`/categories/${categoryId}/variants/${variantId}`, { method: 'DELETE', token }),
+  deleteAttribute: (token: string, categoryId: string, attributeId: string) =>
+    apiFetch<void>(`/categories/${categoryId}/attributes/${attributeId}`, {
+      method: 'DELETE', token,
+    }),
 };

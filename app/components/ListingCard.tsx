@@ -1,7 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { Link } from '../../i18n/navigation';
+import Link from 'next/link';
 import type { ListingResponse } from '../lib/types';
 import { resolveMediaUrl } from '../lib/api';
 import { ImageOff, MapPin } from 'lucide-react';
@@ -22,8 +21,6 @@ function formatPrice(price: number): string {
 }
 
 export default function ListingCard({ listing, style, className }: ListingCardProps) {
-  const t = useTranslations('listings');
-  const tl = useTranslations('listing');
 
   const photo = listing.photos?.[0];
   const statusColors: Record<string, string> = {
@@ -37,22 +34,22 @@ export default function ListingCard({ listing, style, className }: ListingCardPr
   const statusColor = statusColors[listing.status] ?? '#9A8C7C';
 
   const statusLabels: Record<string, string> = {
-    active: tl('statusActive'),
-    reserved: tl('statusReserved'),
-    sold: tl('statusSold'),
-    draft: tl('statusDraft'),
-    expired: tl('statusExpired'),
-    suspended: tl('statusSuspended'),
+    active: 'Disponible',
+    reserved: 'Reservado',
+    sold: 'Vendido',
+    draft: 'Borrador',
+    expired: 'Expirado',
+    suspended: 'Suspendido',
   };
 
   function timeAgo(dateStr: string): string {
     const diff = Date.now() - new Date(dateStr).getTime();
     const days = Math.floor(diff / 86400000);
-    if (days === 0) return t('today');
-    if (days === 1) return t('yesterday');
-    if (days < 7) return t('daysAgo', { count: days });
-    if (days < 30) return t('weeksAgo', { count: Math.floor(days / 7) });
-    return t('monthsAgo', { count: Math.floor(days / 30) });
+    if (days === 0) return 'Hoy';
+    if (days === 1) return 'Ayer';
+    if (days < 7) return 'hace ' + days + 'd';
+    if (days < 30) return 'hace ' + Math.floor(days / 7) + 'sem';
+    return 'hace ' + Math.floor(days / 30) + 'mes';
   }
 
   return (
@@ -216,7 +213,7 @@ export default function ListingCard({ listing, style, className }: ListingCardPr
               letterSpacing: '0.04em',
             }}
           >
-            {t('viewLink')}
+            {'Ver →'}
           </span>
         </div>
       </div>

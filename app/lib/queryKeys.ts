@@ -8,6 +8,8 @@ export const queryKeys = {
   myListings: (cursor?: string) => ['myListings', cursor ?? ''] as const,
   myAppointments: (cursor?: string) => ['myAppointments', cursor ?? ''] as const,
   myContactRequests: (cursor?: string) => ['myContactRequests', cursor ?? ''] as const,
+  myReceivedContactRequests: (cursor?: string) => ['myReceivedContactRequests', cursor ?? ''] as const,
+  myRatings: (cursor?: string) => ['myRatings', cursor ?? ''] as const,
   myFavorites: (cursor?: string) => ['myFavorites', cursor ?? ''] as const,
 
   // Public listing resources

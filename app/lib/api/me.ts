@@ -2,17 +2,24 @@ import { apiFetch } from './client';
 import type { MeProfileResponse } from '../types/users';
 import type { PaginationResponse } from '../types/pagination';
 import type { ListingResponse } from '../types/listings';
-import type { FavoriteResponse, RatingResponse } from '../types/social';
-import type { AppointmentResponse, ContactRequestResponse } from '../types/interactions';
+import type { FavoriteResponse } from '../types/social';
+import type { ContactRequestResponse } from '../types/interactions';
+
+interface UpdateProfilePayload {
+  name: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  city?: string | null;
+}
 
 export const me = {
   getProfile: (token: string) =>
     apiFetch<MeProfileResponse>('/users/me/profile', { token }),
 
-  updateProfile: (token: string, name: string) =>
+  updateProfile: (token: string, payload: UpdateProfilePayload) =>
     apiFetch<MeProfileResponse>('/users/me/profile', {
       method: 'PATCH',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(payload),
       token,
     }),
 
@@ -41,15 +48,6 @@ export const me = {
     );
   },
 
-  getAppointments: (token: string, cursor?: string, limit = 10) => {
-    const q = new URLSearchParams({ limit: String(limit) });
-    if (cursor) q.set('cursor', cursor);
-    return apiFetch<PaginationResponse<AppointmentResponse>>(
-      `/users/me/appointments?${q.toString()}`,
-      { token },
-    );
-  },
-
   getContactRequests: (token: string, cursor?: string, limit = 10) => {
     const q = new URLSearchParams({ limit: String(limit) });
     if (cursor) q.set('cursor', cursor);
@@ -59,11 +57,11 @@ export const me = {
     );
   },
 
-  getRatings: (token: string, cursor?: string, limit = 10) => {
+  getReceivedContactRequests: (token: string, cursor?: string, limit = 10) => {
     const q = new URLSearchParams({ limit: String(limit) });
     if (cursor) q.set('cursor', cursor);
-    return apiFetch<PaginationResponse<RatingResponse>>(
-      `/users/me/ratings?${q.toString()}`,
+    return apiFetch<PaginationResponse<ContactRequestResponse>>(
+      `/users/me/received-contact-requests?${q.toString()}`,
       { token },
     );
   },

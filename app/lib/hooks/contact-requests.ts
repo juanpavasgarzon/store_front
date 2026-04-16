@@ -26,14 +26,11 @@ export function useCreateContactRequest(listingId: string) {
   });
 }
 
-export function useUpdateContactRequestStatus(listingId: string) {
-  const queryClient = useQueryClient();
+export function useReceivedContactRequests(cursor?: string) {
   const token = useToken();
-  return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'pending' | 'responded' | 'closed' }) =>
-      contactRequests.updateStatus(token!, listingId, id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myContactRequests'] });
-    },
+  return useQuery({
+    queryKey: queryKeys.myReceivedContactRequests(cursor),
+    queryFn: () => me.getReceivedContactRequests(token!, cursor, 10),
+    enabled: !!token,
   });
 }

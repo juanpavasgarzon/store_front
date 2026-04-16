@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { ListingResponse, ListingStatsResponse, ListingPriceHistory } from '../types/listings';
+import type { ListingResponse, ListingStatsResponse } from '../types/listings';
 import type { PaginationResponse } from '../types/pagination';
 
 export const listings = {
@@ -28,18 +28,6 @@ export const listings = {
   trending: (period: '24h' | '7d' = '7d', limit = 8) =>
     apiFetch<ListingResponse[]>(`/listings/trending?period=${period}&limit=${limit}`),
 
-  nearby: (lat: number, lng: number, radius = 10, cursor?: string) => {
-    const q = new URLSearchParams({ lat: String(lat), lng: String(lng), radius: String(radius) });
-    if (cursor) q.set('cursor', cursor);
-    return apiFetch<PaginationResponse<ListingResponse>>(`/listings/nearby?${q.toString()}`);
-  },
-
-  compare: (ids: string[]) =>
-    apiFetch<ListingResponse[]>('/listings/compare', {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    }),
-
   create: (token: string, data: object) =>
     apiFetch<ListingResponse>('/listings', {
       method: 'POST',
@@ -57,18 +45,8 @@ export const listings = {
   delete: (token: string, id: string) =>
     apiFetch<void>(`/listings/${id}`, { method: 'DELETE', token }),
 
-  boost: (token: string, id: string, expiresAt: string) =>
-    apiFetch<ListingResponse>(`/listings/${id}/boost`, {
-      method: 'POST',
-      body: JSON.stringify({ expiresAt }),
-      token,
-    }),
-
   getStats: (token: string, id: string) =>
     apiFetch<ListingStatsResponse>(`/listings/${id}/stats`, { token }),
-
-  getPriceHistory: (token: string, id: string) =>
-    apiFetch<ListingPriceHistory[]>(`/listings/${id}/price-history`, { token }),
 
   uploadPhotos: (token: string, listingId: string, files: File[]) => {
     const form = new FormData();
