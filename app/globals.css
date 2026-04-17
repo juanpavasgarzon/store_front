@@ -397,7 +397,7 @@ h1, h2, h3, .heading {
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 32px;
-  align-items: start;
+  align-items: stretch;
 }
 
 /* Sidebar content divider — vertical rule between filters and grid */

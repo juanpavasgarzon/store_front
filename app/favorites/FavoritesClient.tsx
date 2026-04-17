@@ -91,7 +91,7 @@ export default function FavoritesClient() {
 
   if (!profile) return null;
 
-  const favs = data?.data ?? [];
+  const favs = (data?.data ?? []).filter((f) => f.listing);
 
   return (
     <div className="container-wide py-12 pb-20 flex-1 px-6">
