@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 const SORT_OPTIONS = [
-  { value: '', label: 'Relevancia' },
   { value: '-createdAt', label: 'Más recientes' },
   { value: 'price', label: 'Precio: menor a mayor' },
   { value: '-price', label: 'Precio: mayor a menor' },
@@ -122,6 +121,16 @@ export default function ListingsClient() {
   const prevHref = meta?.hasPreviousPage && meta.previousCursor ? baseHref(meta.previousCursor) : null;
   const nextHref = meta?.hasNextPage && meta.nextCursor ? baseHref(meta.nextCursor) : null;
 
+  const hasActiveFilters = !!(qFromUrl || sortFromUrl || minPriceFromUrl || maxPriceFromUrl || categoryId);
+
+  const clearAllFilters = () => {
+    ownNavRef.current = true;
+    setInputValue('');
+    setMinPriceInput('');
+    setMaxPriceInput('');
+    router.replace('/listings', { scroll: false });
+  };
+
   return (
     <div className="container-wide py-12 flex-1 px-6">
       <div className="mb-10">
@@ -146,6 +155,19 @@ export default function ListingsClient() {
       <div className="layout-sidebar">
         {/* ── Sidebar ── */}
         <aside className="sidebar-filters">
+          {/* Clear all filters */}
+          {hasActiveFilters && (
+            <div className="mb-6 pb-5 border-b border-[var(--border-light)]">
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="text-[12px] text-primary hover:text-primary/70 font-medium transition-colors"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+
           {/* Search */}
           <div className="mb-7">
             <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-2.5">
@@ -224,19 +246,6 @@ export default function ListingsClient() {
                 )}
               </div>
             </div>
-            {(minPriceFromUrl || maxPriceFromUrl) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMinPriceInput('');
-                  setMaxPriceInput('');
-                  pushUrl({ minPrice: undefined, maxPrice: undefined, cursor: undefined });
-                }}
-                className="mt-2 text-[11px] text-muted-foreground hover:text-foreground underline"
-              >
-                Limpiar precio
-              </button>
-            )}
           </div>
 
           {/* Category */}
