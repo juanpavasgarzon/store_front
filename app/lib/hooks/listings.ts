@@ -1,11 +1,23 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '../queryKeys';
 import { me } from '../api/me';
 import { listings } from '../api/listings';
 import { useToken } from './token';
 import type { ListingResponse } from '../types';
+
+export function usePublicListings(params: { cursor?: string; q?: string; categoryId?: string }) {
+  return useQuery({
+    queryKey: queryKeys.publicListings(params),
+    queryFn: () =>
+      params.categoryId
+        ? listings.listByCategory(params.categoryId, { cursor: params.cursor, limit: 12, search: params.q })
+        : listings.list({ cursor: params.cursor, limit: 12, search: params.q }),
+    staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+}
 
 export function useMyListings(cursor?: string) {
   const token = useToken();

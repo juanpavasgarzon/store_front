@@ -8,7 +8,7 @@ export { usePasswordResetRequest, usePasswordResetConfirm } from './auth';
 export { useProfile, useUpdateProfile } from './profile';
 
 // Listings
-export { useMyListings, useCreateListing, useDeleteListing, useListingStats, useUploadPhotos, useUpdateListing } from './listings';
+export { usePublicListings, useMyListings, useCreateListing, useDeleteListing, useListingStats, useUploadPhotos, useUpdateListing } from './listings';
 
 // Contact Requests
 export { useMyContactRequests, useReceivedContactRequests, useCreateContactRequest } from './contact-requests';

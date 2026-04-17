@@ -3,7 +3,12 @@ import Link from 'next/link';
 import { listings } from '../../lib/api';
 import Navbar from '../../components/Navbar';
 import PhotoCarousel from '../../components/PhotoCarousel';
+import ListingMapClient from '../../components/ListingMapClient';
 import ContactButton from './ContactButton';
+import EditButton from './EditButton';
+import ShareButton from './ShareButton';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Metadata } from 'next';
 import type { ListingResponse } from '../../lib/types';
 
@@ -132,14 +137,42 @@ export default async function ListingDetailPage({ params }: PageProps) {
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 400, marginBottom: 16 }}>{'Descripción'}</h2>
               <div style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{listing.description}</div>
             </div>
+
+            {/* Map */}
+            {listing.latitude != null && listing.longitude != null && (
+              <div style={{ marginBottom: 40 }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 400, marginBottom: 16 }}>
+                  {'Ubicación'}
+                </h2>
+                <ListingMapClient
+                  latitude={listing.latitude}
+                  longitude={listing.longitude}
+                  title={listing.title}
+                />
+              </div>
+            )}
           </div>
 
           {/* ── Sidebar ─────────────────────────────────────────────────── */}
           <aside className="detail-sidebar" style={{ position: 'sticky', top: 84 }}>
+            <EditButton listingId={listing.id} ownerId={listing.userId} />
+            <ShareButton title={listing.title} />
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '28px 24px', marginBottom: 16 }}>
-              <div style={{ marginBottom: 20 }}>
-                <p className="price-tag" style={{ fontSize: '2rem' }}>{formatPrice(listing.price)}</p>
-                <div style={{ marginTop: 8 }}>
+              <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Price row */}
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 5 }}>
+                    Precio
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.55rem', fontWeight: 600, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: 'var(--accent-light)' }}>
+                    {formatPrice(listing.price)}
+                  </p>
+                </div>
+                {/* Status row */}
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 5 }}>
+                    Estado
+                  </p>
                   <span className={`status-badge status-${listing.status}`}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
                     {statusLabel}
@@ -155,10 +188,9 @@ export default async function ListingDetailPage({ params }: PageProps) {
                       href={whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn btn-primary"
-                      style={{ width: '100%', textAlign: 'center', textDecoration: 'none' }}
+                      className={cn(buttonVariants(), 'w-full justify-center')}
                     >
-                      {'Contactar por WhatsApp'}
+                      Contactar por WhatsApp
                     </a>
                   )}
                   <ContactButton listingId={listing.id} type="contact" listingUserId={listing.userId} />

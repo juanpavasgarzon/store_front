@@ -10,6 +10,26 @@ import { sileo } from 'sileo';
 import type { CategoryResponse, CategoryAttributeResponse, AttributeValueType } from '../../lib/types/categories';
 import { X, Plus, Edit2, Trash2, LayoutGrid, ChevronDown, ChevronRight, Settings } from 'lucide-react';
 import EmptyState from '../../components/EmptyState';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const ATTRIBUTE_TYPE_LABELS: Record<AttributeValueType, string> = {
   text: 'Texto',
@@ -24,68 +44,6 @@ const ATTRIBUTE_TYPE_COLORS: Record<AttributeValueType, string> = {
   boolean: '#6ECC96',
   select: '#C87D38',
 };
-
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 600,
-  letterSpacing: '0.1em', textTransform: 'uppercase',
-  color: 'var(--text-muted)', marginBottom: 6,
-};
-
-// ── Modal ─────────────────────────────────────────────────────────────────────
-
-function Modal({ open, onClose, title, children }: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}) {
-  useEffect(() => {
-    if (!open) { return; }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { onClose(); }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => { document.removeEventListener('keydown', handleKeyDown); };
-  }, [open, onClose]);
-
-  if (!open) { return null; }
-
-  return (
-    <div
-      onClick={(event) => { if (event.target === event.currentTarget) { onClose(); } }}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '24px',
-        overflowY: 'auto',
-      }}
-    >
-      <div style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 16,
-        padding: '28px 32px',
-        width: '100%',
-        maxWidth: 540,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
-        margin: 'auto',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 400 }}>{title}</p>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center' }}
-          >
-            <X size={16} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
 
 // ── Attribute Form ────────────────────────────────────────────────────────────
 
@@ -152,12 +110,13 @@ function AttributeForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div>
-          <label style={labelStyle}>Nombre</label>
-          <input
-            className="field"
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+            Nombre
+          </Label>
+          <Input
             value={form.name}
             onChange={(event) => {
               setField('name', event.target.value);
@@ -166,113 +125,115 @@ function AttributeForm({
               }
             }}
             placeholder="ej: Marca, Habitaciones"
-            style={{ fontSize: 13 }}
+            className="text-[13px] h-9"
             required
           />
         </div>
-        <div>
-          <label style={labelStyle}>Clave (key)</label>
-          <input
-            className="field"
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+            Clave (key)
+          </Label>
+          <Input
             value={form.key}
             onChange={(event) => setField('key', event.target.value)}
             placeholder="marca, habitaciones"
-            style={{ fontSize: 13, fontFamily: 'monospace' }}
+            className="text-[13px] h-9 font-mono tracking-[0.05em]"
             required
           />
-          <p style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>Identificador único, sin espacios</p>
+          <p className="text-[10px] text-muted-foreground">Identificador único, sin espacios</p>
         </div>
       </div>
 
-      <div>
-        <label style={labelStyle}>Tipo de valor</label>
-        <select
-          className="field"
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Tipo de valor
+        </Label>
+        <Select
           value={form.valueType}
-          onChange={(event) => setField('valueType', event.target.value as AttributeValueType)}
-          style={{ fontSize: 13, appearance: 'none', cursor: 'pointer' }}
+          onValueChange={(v) => setField('valueType', v as AttributeValueType)}
         >
-          {(Object.entries(ATTRIBUTE_TYPE_LABELS) as [AttributeValueType, string][]).map(([type, label]) => (
-            <option key={type} value={type}>{label}</option>
-          ))}
-        </select>
+          <SelectTrigger className="text-[13px] h-9">
+            <SelectValue placeholder="Tipo de atributo">
+              {(v: string) => ATTRIBUTE_TYPE_LABELS[v as AttributeValueType] ?? v}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.entries(ATTRIBUTE_TYPE_LABELS) as [AttributeValueType, string][]).map(([type, label]) => (
+              <SelectItem key={type} value={type} label={label} className="text-[13px]">{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="flex items-center gap-2.5">
         <input
           type="checkbox"
           id="isRequired"
           checked={form.isRequired}
           onChange={(event) => setField('isRequired', event.target.checked)}
-          style={{ accentColor: 'var(--accent)', width: 16, height: 16, cursor: 'pointer' }}
+          className="w-4 h-4 cursor-pointer accent-[var(--accent)]"
         />
-        <label htmlFor="isRequired" style={{ fontSize: 13, cursor: 'pointer', color: 'var(--text-secondary)' }}>
+        <label htmlFor="isRequired" className="text-[13px] cursor-pointer text-muted-foreground">
           Campo requerido
         </label>
       </div>
 
       {form.valueType === 'select' && (
-        <div>
-          <label style={labelStyle}>Opciones disponibles</label>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            <input
-              className="field"
+        <div className="flex flex-col gap-2">
+          <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+            Opciones disponibles
+          </Label>
+          <div className="flex gap-2">
+            <Input
               value={form.optionsInput}
               onChange={(event) => setField('optionsInput', event.target.value)}
               onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addOption(); } }}
               placeholder="Escribe una opción y presiona Enter"
-              style={{ fontSize: 13, flex: 1 }}
+              className="text-[13px] h-9 flex-1"
             />
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={addOption}
-              style={{ fontSize: 12, padding: '0 14px', flexShrink: 0 }}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={addOption} className="shrink-0">
               <Plus size={13} />
-            </button>
+            </Button>
           </div>
-          {form.options.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {form.options.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
               {form.options.map((option, index) => (
-                <span key={index} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontSize: 12, padding: '4px 10px',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-light)',
-                  borderRadius: 999, color: 'var(--text-secondary)',
-                }}>
+                <Badge
+                  key={index}
+                  variant="outline"
+                  className="text-[12px] px-2.5 py-1 bg-[var(--bg-elevated)] border-[var(--border-light)] text-muted-foreground flex items-center gap-1.5"
+                >
                   {option}
                   <button
                     type="button"
                     onClick={() => removeOption(index)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}
+                    className="text-muted-foreground hover:text-foreground flex p-0 bg-transparent border-none cursor-pointer"
                   >
                     <X size={11} />
                   </button>
-                </span>
+                </Badge>
               ))}
             </div>
-          )}
-          {form.options.length === 0 && (
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin opciones aún</p>
+          ) : (
+            <p className="text-[12px] text-muted-foreground italic">Sin opciones aún</p>
           )}
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-        <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={onCancel}>
+      <Separator className="mt-1" />
+
+      <DialogFooter>
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
           Cancelar
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          className="btn btn-primary"
-          style={{ fontSize: 13 }}
+          size="sm"
           disabled={isPending || !form.name.trim() || !form.key.trim()}
         >
           {isPending ? 'Guardando…' : initialData ? 'Guardar cambios' : 'Crear atributo'}
-        </button>
-      </div>
+        </Button>
+      </DialogFooter>
     </form>
   );
 }
@@ -314,56 +275,48 @@ function AttributeRow({
 
   return (
     <>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '12px 16px',
-        background: 'var(--bg-elevated)',
-        borderRadius: 8,
-        border: '1px solid var(--border-light)',
-      }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
-              {attribute.name}
-            </span>
+      <div className="flex items-center gap-3 px-4 py-3 bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-light)]">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[13px] font-medium text-foreground">{attribute.name}</span>
             {attribute.isRequired && (
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: '1px 6px',
-                background: 'color-mix(in srgb, var(--accent) 15%, transparent)',
-                color: 'var(--accent)', borderRadius: 999,
-                letterSpacing: '0.06em', textTransform: 'uppercase',
-              }}>
+              <Badge
+                variant="outline"
+                className="text-[10px] font-bold px-1.5 py-0 bg-primary/15 text-primary border-primary/20 tracking-[0.06em] uppercase"
+              >
                 requerido
-              </span>
+              </Badge>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-            <code style={{ fontSize: 10, color: 'var(--text-muted)', background: 'var(--bg-surface)', padding: '1px 6px', borderRadius: 4 }}>
+          <div className="flex items-center gap-2 mt-0.5">
+            <code className="text-[10px] text-muted-foreground bg-card px-1.5 py-0.5 rounded">
               {attribute.key}
             </code>
-            <span style={{
-              fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
-              color: ATTRIBUTE_TYPE_COLORS[attribute.valueType],
-            }}>
+            <span
+              className="text-[10px] font-semibold tracking-[0.06em] uppercase"
+              style={{ color: ATTRIBUTE_TYPE_COLORS[attribute.valueType] }}
+            >
               {ATTRIBUTE_TYPE_LABELS[attribute.valueType]}
             </span>
             {attribute.valueType === 'select' && attribute.options.length > 0 && (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              <span className="text-[11px] text-muted-foreground">
                 {attribute.options.length} opciones
               </span>
             )}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-          <button
-            className="btn btn-ghost"
-            style={{ fontSize: 11, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4 }}
+        <div className="flex gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setEditOpen(true)}
           >
             <Edit2 size={11} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => {
               sileo.action({
                 title: `¿Eliminar "${attribute.name}"?`,
@@ -372,26 +325,28 @@ function AttributeRow({
               });
             }}
             disabled={deleteAttribute.isPending}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#CC6E6E', padding: '4px 8px',
-              display: 'flex', alignItems: 'center', borderRadius: 6,
-              opacity: deleteAttribute.isPending ? 0.5 : 1,
-            }}
+            className="text-[#CC6E6E] hover:text-[#CC6E6E] hover:bg-[color-mix(in_srgb,#CC6E6E_10%,transparent)]"
           >
             <Trash2 size={11} />
-          </button>
+          </Button>
         </div>
       </div>
 
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title={`Editar: ${attribute.name}`}>
-        <AttributeForm
-          initialData={attribute}
-          onSubmit={(data) => updateAttribute.mutate(data)}
-          onCancel={() => setEditOpen(false)}
-          isPending={updateAttribute.isPending}
-        />
-      </Modal>
+      <Dialog open={editOpen} onOpenChange={(isOpen) => !isOpen && setEditOpen(false)}>
+        <DialogContent className="sm:max-w-[540px]">
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: 'var(--font-display)' }}>
+              Editar: {attribute.name}
+            </DialogTitle>
+          </DialogHeader>
+          <AttributeForm
+            initialData={attribute}
+            onSubmit={(data) => updateAttribute.mutate(data)}
+            onCancel={() => setEditOpen(false)}
+            isPending={updateAttribute.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -456,49 +411,53 @@ function CategoryRow({ category, token }: { category: CategoryResponse; token: s
 
   return (
     <>
-      <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+      <Card className="overflow-hidden">
         {/* Category header row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', flexWrap: 'wrap' }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'color-mix(in srgb, var(--accent) 10%, var(--bg-elevated))',
-            border: '1px solid var(--border-accent)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--accent)', flexShrink: 0,
-          }}>
+        <div className="flex items-center gap-3 px-5 py-4 flex-wrap">
+          <div
+            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-primary border"
+            style={{
+              background: 'color-mix(in srgb, var(--accent) 10%, var(--bg-elevated))',
+              borderColor: 'var(--border-accent)',
+            }}
+          >
             <LayoutGrid size={14} />
           </div>
 
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{category.name}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{category.slug}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-medium text-foreground">{category.name}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-muted-foreground font-mono">{category.slug}</span>
               {attributeCount > 0 && (
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                <span className="text-[10px] text-muted-foreground">
                   · {attributeCount} atributo{attributeCount !== 1 ? 's' : ''}
                 </span>
               )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            <button
-              className="btn btn-ghost"
-              style={{ fontSize: 11, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5 }}
+          <div className="flex gap-1.5 items-center shrink-0">
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={() => setAttributesExpanded(!attributesExpanded)}
+              className="flex items-center gap-1.5"
             >
               <Settings size={11} />
               Atributos
               {attributesExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-            </button>
-            <button
-              className="btn btn-ghost"
-              style={{ fontSize: 11, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5 }}
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={() => setEditOpen(true)}
+              className="flex items-center gap-1.5"
             >
               <Edit2 size={12} /> Editar
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => {
                 sileo.action({
                   title: '¿Eliminar categoría?',
@@ -507,98 +466,109 @@ function CategoryRow({ category, token }: { category: CategoryResponse; token: s
                 });
               }}
               disabled={deleteCategory.isPending}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', padding: '5px 8px', display: 'flex', alignItems: 'center', borderRadius: 6 }}
+              className="text-[#CC6E6E] hover:text-[#CC6E6E] hover:bg-[color-mix(in_srgb,#CC6E6E_10%,transparent)]"
             >
               <Trash2 size={14} />
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Attributes panel */}
         {attributesExpanded && (
-          <div style={{ borderTop: '1px solid var(--border)', padding: '16px 20px', background: 'var(--bg-canvas)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                Atributos dinámicos
-              </p>
-              <button
-                className="btn btn-outline"
-                style={{ fontSize: 11, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
-                onClick={() => setCreateAttributeOpen(true)}
-              >
-                <Plus size={11} /> Nuevo atributo
-              </button>
+          <>
+            <Separator />
+            <div className="px-5 py-4 bg-background">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+                  Atributos dinámicos
+                </p>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => setCreateAttributeOpen(true)}
+                  className="flex items-center gap-1.5"
+                >
+                  <Plus size={11} /> Nuevo atributo
+                </Button>
+              </div>
+
+              {attributesLoading ? (
+                <p className="text-[12px] text-muted-foreground">Cargando…</p>
+              ) : attributeList.length === 0 ? (
+                <div className="py-5 text-center text-muted-foreground text-[13px]">
+                  Sin atributos. Agrega uno para que los usuarios llenen info al publicar.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {attributeList.map((attribute) => (
+                    <AttributeRow key={attribute.id} attribute={attribute} categoryId={category.id} token={token} />
+                  ))}
+                </div>
+              )}
             </div>
-
-            {attributesLoading ? (
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Cargando…</p>
-            ) : attributeList.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-                Sin atributos. Agrega uno para que los usuarios llenen info al publicar.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {attributeList.map((attribute) => (
-                  <AttributeRow key={attribute.id} attribute={attribute} categoryId={category.id} token={token} />
-                ))}
-              </div>
-            )}
-          </div>
+          </>
         )}
-      </div>
+      </Card>
 
-      {/* Edit category modal */}
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Editar categoría">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Nombre</label>
-            <input
-              className="field"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                setSlug(event.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
-              }}
-              style={{ fontSize: 13 }}
-              placeholder="Nombre de la categoría"
-            />
+      {/* Edit category dialog */}
+      <Dialog open={editOpen} onOpenChange={(isOpen) => !isOpen && setEditOpen(false)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: 'var(--font-display)' }}>Editar categoría</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+                Nombre
+              </Label>
+              <Input
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  setSlug(event.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+                }}
+                className="text-[13px] h-9"
+                placeholder="Nombre de la categoría"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+                Slug (URL)
+              </Label>
+              <Input
+                value={slug}
+                onChange={(event) => setSlug(event.target.value)}
+                className="text-[13px] h-9 font-mono"
+                placeholder="slug-url"
+              />
+            </div>
           </div>
-          <div>
-            <label style={labelStyle}>Slug (URL)</label>
-            <input
-              className="field"
-              value={slug}
-              onChange={(event) => setSlug(event.target.value)}
-              style={{ fontSize: 13, fontFamily: 'monospace' }}
-              placeholder="slug-url"
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-            <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setEditOpen(false)}>Cancelar</button>
-            <button
-              className="btn btn-primary"
-              style={{ fontSize: 13 }}
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button
+              size="sm"
               disabled={updateCategory.isPending || !name.trim() || !slug.trim()}
               onClick={() => updateCategory.mutate({ name, slug })}
             >
               {updateCategory.isPending ? 'Guardando…' : 'Guardar'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Create attribute modal */}
-      <Modal
-        open={createAttributeOpen}
-        onClose={() => setCreateAttributeOpen(false)}
-        title="Nuevo atributo"
-      >
-        <AttributeForm
-          onSubmit={(data) => createAttribute.mutate(data)}
-          onCancel={() => setCreateAttributeOpen(false)}
-          isPending={createAttribute.isPending}
-        />
-      </Modal>
+      {/* Create attribute dialog */}
+      <Dialog open={createAttributeOpen} onOpenChange={(isOpen) => !isOpen && setCreateAttributeOpen(false)}>
+        <DialogContent className="sm:max-w-[540px]">
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: 'var(--font-display)' }}>Nuevo atributo</DialogTitle>
+          </DialogHeader>
+          <AttributeForm
+            onSubmit={(data) => createAttribute.mutate(data)}
+            onCancel={() => setCreateAttributeOpen(false)}
+            isPending={createAttribute.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -649,8 +619,8 @@ export default function CategoriesAdmin({ embedded }: { embedded?: boolean } = {
 
   if (!embedded && profileLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">Cargando…</p>
       </div>
     );
   }
@@ -662,34 +632,30 @@ export default function CategoriesAdmin({ embedded }: { embedded?: boolean } = {
   const content = (
     <>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: embedded ? 24 : 40 }}>
+      <div className="flex items-start justify-between flex-wrap gap-4 mb-10">
         <div>
           {!embedded && (
-            <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8, fontWeight: 600 }}>
+            <p className="text-[11px] tracking-[0.14em] uppercase text-primary mb-2 font-semibold">
               ADMINISTRACIÓN
             </p>
           )}
           {!embedded && (
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)', fontWeight: 300, marginBottom: 8 }}>
+            <h1 className="font-light mb-2" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)' }}>
               Categorías
             </h1>
           )}
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+          <p className="text-muted-foreground text-[14px]">
             {categoryList.length} categoría{categoryList.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          className="btn btn-primary"
-          style={{ fontSize: 13, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 7 }}
-          onClick={() => setCreateOpen(true)}
-        >
+        <Button onClick={() => setCreateOpen(true)} className="flex items-center gap-1.5">
           <Plus size={14} /> Nueva categoría
-        </button>
+        </Button>
       </div>
 
       {/* List */}
       {isLoading ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Cargando categorías…</p>
+        <p className="text-muted-foreground text-[14px]">Cargando categorías…</p>
       ) : categoryList.length === 0 ? (
         <EmptyState
           icon={<LayoutGrid size={32} />}
@@ -698,73 +664,80 @@ export default function CategoriesAdmin({ embedded }: { embedded?: boolean } = {
           action={{ label: 'Crear categoría', href: '#' }}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {categoryList.map((category) => (
             <CategoryRow key={category.id} category={category} token={token!} />
           ))}
         </div>
       )}
 
-      {/* Create category modal */}
-      <Modal
+      {/* Create category dialog */}
+      <Dialog
         open={createOpen}
-        onClose={() => { setCreateOpen(false); setNewName(''); setNewSlug(''); }}
-        title="Nueva categoría"
+        onOpenChange={(isOpen) => {
+          if (!isOpen) { setCreateOpen(false); setNewName(''); setNewSlug(''); }
+        }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Nombre</label>
-            <input
-              type="text"
-              className="field"
-              placeholder="ej: Electrónica, Ropa, Hogar…"
-              value={newName}
-              onChange={(event) => {
-                setNewName(event.target.value);
-                setNewSlug(event.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
-              }}
-              style={{ fontSize: 13 }}
-              autoFocus
-            />
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: 'var(--font-display)' }}>Nueva categoría</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+                Nombre
+              </Label>
+              <Input
+                type="text"
+                placeholder="ej: Electrónica, Ropa, Hogar…"
+                value={newName}
+                onChange={(event) => {
+                  setNewName(event.target.value);
+                  setNewSlug(event.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+                }}
+                className="text-[13px] h-9"
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+                Slug (URL)
+              </Label>
+              <Input
+                type="text"
+                placeholder="electronica"
+                value={newSlug}
+                onChange={(event) => setNewSlug(event.target.value)}
+                className="text-[13px] h-9 font-mono"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Se usará en la URL: /listings?categoryId=…
+              </p>
+            </div>
           </div>
-          <div>
-            <label style={labelStyle}>Slug (URL)</label>
-            <input
-              type="text"
-              className="field"
-              placeholder="electronica"
-              value={newSlug}
-              onChange={(event) => setNewSlug(event.target.value)}
-              style={{ fontSize: 13, fontFamily: 'monospace' }}
-            />
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
-              Se usará en la URL: /listings?categoryId=…
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-            <button
-              className="btn btn-ghost"
-              style={{ fontSize: 13 }}
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => { setCreateOpen(false); setNewName(''); setNewSlug(''); }}
             >
               Cancelar
-            </button>
-            <button
-              className="btn btn-primary"
-              style={{ fontSize: 13 }}
+            </Button>
+            <Button
+              size="sm"
               disabled={createCategory.isPending || !newName.trim() || !newSlug.trim()}
               onClick={() => createCategory.mutate({ name: newName.trim(), slug: newSlug.trim() })}
             >
               {createCategory.isPending ? 'Creando…' : 'Crear categoría'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 
   return embedded ? content : (
-    <div className="container-wide" style={{ padding: '48px 24px 80px', flex: 1 }}>
+    <div className="container-wide py-12 pb-20 flex-1 px-6">
       {content}
     </div>
   );

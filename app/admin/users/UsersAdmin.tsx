@@ -3,139 +3,119 @@
 import { useState, useEffect } from 'react';
 import { useAdminUsers, useSetUserActive, useSetUserRole, useDeleteUser, useProfile, useDebounce } from '../../lib/hooks';
 import type { UserResponse } from '../../lib/types/users';
-import { UserCheck, UserX, Shield, Trash2, ChevronRight, ChevronLeft, Search } from 'lucide-react';
+import { UserCheck, UserX, Trash2, ChevronRight, ChevronLeft, Search } from 'lucide-react';
 import UserAvatar from '../../components/UserAvatar';
-import ConfirmModal from '../../components/ConfirmModal';
+import { sileo } from 'sileo';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
-const ROLES = ['user', 'admin', 'owner'];
+const ROLES = ['user', 'admin', 'owner'] as const;
+type Role = (typeof ROLES)[number];
 
-const roleColors: Record<string, string> = {
-  user: 'var(--text-muted)',
-  admin: '#9A8C7C',
-  owner: '#C87D38',
+const roleStyle: Record<Role, { text: string; bg: string; border: string }> = {
+  user:  { text: 'var(--text-muted)',  bg: 'transparent',                                      border: 'var(--border-light)'                               },
+  admin: { text: '#9A8C7C',            bg: 'color-mix(in srgb, #9A8C7C 12%, transparent)',     border: 'color-mix(in srgb, #9A8C7C 30%, transparent)'     },
+  owner: { text: '#C87D38',            bg: 'color-mix(in srgb, #C87D38 12%, transparent)',     border: 'color-mix(in srgb, #C87D38 30%, transparent)'     },
 };
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-interface PendingAction {
-  type: 'role' | 'active' | 'delete';
-  userId: string;
-  userName: string;
-  value?: string | boolean;
-}
-
-function getModalProps(action: PendingAction): { title: string; description: string; confirmLabel: string; danger: boolean } {
-  if (action.type === 'delete') {
-    return {
-      title: `¿Eliminar a "${action.userName}"?`,
-      description: 'Esta acción es irreversible. El usuario perderá acceso permanentemente.',
-      confirmLabel: 'Eliminar',
-      danger: true,
-    };
-  }
-  if (action.type === 'active') {
-    const activating = action.value as boolean;
-    return {
-      title: activating ? `¿Activar a "${action.userName}"?` : `¿Desactivar a "${action.userName}"?`,
-      description: activating
-        ? 'El usuario recuperará acceso a la plataforma.'
-        : 'El usuario no podrá iniciar sesión hasta que sea reactivado.',
-      confirmLabel: activating ? 'Activar' : 'Desactivar',
-      danger: !activating,
-    };
-  }
-  return {
-    title: `¿Cambiar rol de "${action.userName}"?`,
-    description: `El nuevo rol será: ${action.value as string}.`,
-    confirmLabel: 'Cambiar rol',
-    danger: false,
-  };
-}
-
 function UserRow({
   user,
   currentUserId,
-  onAction,
+  onChangeRole,
+  onToggleActive,
+  onDelete,
 }: {
   user: UserResponse;
   currentUserId?: string;
-  onAction: (action: PendingAction) => void;
+  onChangeRole: (userId: string, userName: string, newRole: string) => void;
+  onToggleActive: (userId: string, userName: string, activate: boolean) => void;
+  onDelete: (userId: string, userName: string) => void;
 }) {
   const isSelf = user.id === currentUserId;
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px',
-      background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12,
-      flexWrap: 'wrap', opacity: isSelf ? 0.85 : 1,
-    }}>
-      <UserAvatar name={user.name} size={40} />
+    <Card className={isSelf ? 'opacity-80' : ''}>
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+        <UserAvatar name={user.name} size={40} />
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{user.name}</p>
-          {isSelf && (
-            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 999, background: 'var(--bg-elevated)', color: 'var(--accent)', fontWeight: 600, letterSpacing: '0.06em' }}>
-              TÚ
-            </span>
-          )}
-          {!user.isActive && (
-            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 999, background: 'color-mix(in srgb, #CC6E6E 15%, transparent)', color: '#CC6E6E', fontWeight: 600 }}>
-              INACTIVO
-            </span>
-          )}
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+            <p className="text-[14px] font-medium text-foreground">{user.name}</p>
+            {isSelf && (
+              <Badge variant="outline" className="text-[10px] text-primary border-primary/30 bg-primary/10 font-semibold tracking-[0.06em]">
+                TÚ
+              </Badge>
+            )}
+            {!user.isActive && (
+              <Badge variant="outline" className="text-[10px] text-[#CC6E6E] border-[#CC6E6E]/30 bg-[color-mix(in_srgb,#CC6E6E_15%,transparent)] font-semibold">
+                INACTIVO
+              </Badge>
+            )}
+          </div>
+          <p className="text-[12px] text-muted-foreground">{user.email}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Registro: {formatDate(user.createdAt)}</p>
         </div>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{user.email}</p>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Registro: {formatDate(user.createdAt)}</p>
-      </div>
 
-      {/* Role select */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <Shield
-          size={11}
-          style={{ position: 'absolute', left: 10, color: roleColors[user.role] ?? 'var(--text-muted)', pointerEvents: 'none', zIndex: 1 }}
-        />
-        <select
-          className="field"
-          value={user.role}
-          disabled={isSelf}
-          style={{ fontSize: 12, padding: '5px 10px 5px 28px', minWidth: 100, color: roleColors[user.role] ?? 'var(--text-muted)', fontWeight: 600, cursor: isSelf ? 'default' : 'pointer' }}
-          onChange={(e) => {
-            if (e.target.value !== user.role) {
-              onAction({ type: 'role', userId: user.id, userName: user.name, value: e.target.value });
-            }
-          }}
-        >
-          {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-        </select>
-      </div>
+        {/* Role pills */}
+        <div className="flex gap-1 shrink-0" aria-label="Rol del usuario">
+          {ROLES.map((r) => {
+            const active = r === user.role;
+            const s = roleStyle[r];
+            return (
+              <button
+                key={r}
+                disabled={isSelf || active}
+                onClick={() => onChangeRole(user.id, user.name, r)}
+                className="px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-[0.05em] uppercase transition-all duration-150 border disabled:cursor-default"
+                style={{
+                  color: active ? s.text : 'var(--text-muted)',
+                  background: active ? s.bg : 'transparent',
+                  borderColor: active ? s.border : 'var(--border)',
+                  cursor: isSelf || active ? 'default' : 'pointer',
+                  opacity: isSelf ? 0.45 : 1,
+                }}
+              >
+                {r}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        <button
-          className="btn btn-ghost"
-          disabled={isSelf}
-          title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
-          onClick={() => onAction({ type: 'active', userId: user.id, userName: user.name, value: !user.isActive })}
-          style={{ padding: '6px 10px', fontSize: 12, color: user.isActive ? '#6ECC96' : '#CC6E6E', display: 'flex', alignItems: 'center', gap: 4 }}
-        >
-          {user.isActive ? <UserCheck size={14} /> : <UserX size={14} />}
-          {user.isActive ? 'Activo' : 'Inactivo'}
-        </button>
+        {/* Actions */}
+        <div className="flex gap-2 items-center shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isSelf}
+            title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
+            onClick={() => onToggleActive(user.id, user.name, !user.isActive)}
+            className="flex items-center gap-1 text-[12px]"
+            style={{ color: user.isActive ? '#6ECC96' : '#CC6E6E' }}
+          >
+            {user.isActive ? <UserCheck size={14} /> : <UserX size={14} />}
+            {user.isActive ? 'Activo' : 'Inactivo'}
+          </Button>
 
-        {!isSelf && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             title="Eliminar usuario"
-            onClick={() => onAction({ type: 'delete', userId: user.id, userName: user.name })}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#CC6E6E', display: 'flex', alignItems: 'center', padding: '6px' }}
+            disabled={isSelf}
+            onClick={() => onDelete(user.id, user.name)}
+            className="text-[#CC6E6E] hover:text-[#CC6E6E] hover:bg-[color-mix(in_srgb,#CC6E6E_10%,transparent)] disabled:opacity-30"
           >
             <Trash2 size={15} />
-          </button>
-        )}
+          </Button>
+        </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -147,7 +127,6 @@ export default function UsersAdmin({ embedded }: { embedded?: boolean } = {}) {
   const [cursor, setCursor] = useState<string | undefined>();
   const [searchInput, setSearchInput] = useState('');
   const search = useDebounce(searchInput, 300);
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const setActive = useSetUserActive();
   const setRole = useSetUserRole();
@@ -166,23 +145,47 @@ export default function UsersAdmin({ embedded }: { embedded?: boolean } = {}) {
       )
     : users;
 
-  const handleConfirm = () => {
-    if (!pendingAction) return;
-    const { type, userId, value } = pendingAction;
-    if (type === 'delete') deleteUser.mutate(userId);
-    else if (type === 'active') setActive.mutate({ id: userId, isActive: value as boolean });
-    else if (type === 'role') setRole.mutate({ id: userId, role: value as string });
-    setPendingAction(null);
+  const handleChangeRole = (userId: string, userName: string, newRole: string) => {
+    sileo.action({
+      title: `¿Cambiar rol de "${userName}"?`,
+      description: `El nuevo rol será: ${newRole}.`,
+      button: {
+        title: 'Cambiar rol',
+        onClick: () => setRole.mutate({ id: userId, role: newRole }),
+      },
+    });
   };
 
-  const isPending = setActive.isPending || setRole.isPending || deleteUser.isPending;
+  const handleToggleActive = (userId: string, userName: string, activate: boolean) => {
+    sileo.action({
+      title: activate ? `¿Activar a "${userName}"?` : `¿Desactivar a "${userName}"?`,
+      description: activate
+        ? 'El usuario recuperará acceso a la plataforma.'
+        : 'El usuario no podrá iniciar sesión hasta que sea reactivado.',
+      button: {
+        title: activate ? 'Activar' : 'Desactivar',
+        onClick: () => setActive.mutate({ id: userId, isActive: activate }),
+      },
+    });
+  };
+
+  const handleDelete = (userId: string, userName: string) => {
+    sileo.error({
+      title: `¿Eliminar a "${userName}"?`,
+      description: 'Esta acción es irreversible. El usuario perderá acceso permanentemente.',
+      button: {
+        title: 'Eliminar',
+        onClick: () => deleteUser.mutate(userId),
+      },
+    });
+  };
 
   if (!mounted) return null;
 
   if (!embedded && profileLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">Cargando…</p>
       </div>
     );
   }
@@ -191,92 +194,83 @@ export default function UsersAdmin({ embedded }: { embedded?: boolean } = {}) {
 
   const content = (
     <>
-      {pendingAction && (
-        <ConfirmModal
-          open={true}
-          {...getModalProps(pendingAction)}
-          isPending={isPending}
-          onConfirm={handleConfirm}
-          onCancel={() => setPendingAction(null)}
-        />
-      )}
-
       {!embedded && (
-        <div style={{ marginBottom: 40 }}>
-          <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8, fontWeight: 600 }}>
+        <div className="mb-10">
+          <p className="text-[11px] tracking-[0.14em] uppercase text-primary mb-2 font-semibold">
             ADMINISTRACIÓN
           </p>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)', fontWeight: 300, marginBottom: 8 }}>
-            Gestión de <em style={{ fontStyle: 'italic', color: 'var(--accent-light)' }}>usuarios</em>
+          <h1 className="font-light mb-2" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)' }}>
+            Gestión de <em className="italic" style={{ color: 'var(--accent-light)' }}>usuarios</em>
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+          <p className="text-muted-foreground text-[14px]">
             {isLoading ? 'Cargando…' : `${users.length} usuario${users.length !== 1 ? 's' : ''} en esta página`}
           </p>
         </div>
       )}
 
-      <div style={{ position: 'relative', maxWidth: 360, marginBottom: 24 }}>
-        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}>
-          <Search size={15} />
-        </span>
-        <input
+      <div className="relative max-w-[360px] mb-6">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <Input
           type="search"
-          className="field"
           placeholder="Buscar por nombre o correo…"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          style={{ paddingLeft: 36, fontSize: 13 }}
+          className="pl-9 text-[13px] h-9"
         />
       </div>
 
       {isLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="flex flex-col gap-2.5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} style={{ height: 80, background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border)', opacity: 0.5 }} />
+            <div key={i} className="h-20 bg-card rounded-xl border border-border opacity-50" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+        <p className="text-muted-foreground text-[14px]">
           {searchInput ? 'Sin resultados para esta búsqueda.' : 'No hay usuarios.'}
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="flex flex-col gap-2.5">
           {filtered.map((user) => (
             <UserRow
               key={user.id}
               user={user}
               currentUserId={profile.id}
-              onAction={setPendingAction}
+              onChangeRole={handleChangeRole}
+              onToggleActive={handleToggleActive}
+              onDelete={handleDelete}
             />
           ))}
         </div>
       )}
 
       {(meta?.hasNextPage || meta?.hasPreviousPage) && !searchInput && (
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 32, justifyContent: 'center' }}>
-          <button
-            className="btn btn-outline"
+        <div className="flex gap-3 items-center mt-8 justify-center">
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!meta.hasPreviousPage}
             onClick={() => setCursor(meta.previousCursor ?? undefined)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+            className="flex items-center gap-1.5"
           >
             <ChevronLeft size={15} /> Anterior
-          </button>
-          <button
-            className="btn btn-outline"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!meta.hasNextPage}
             onClick={() => setCursor(meta.nextCursor ?? undefined)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+            className="flex items-center gap-1.5"
           >
             Siguiente <ChevronRight size={15} />
-          </button>
+          </Button>
         </div>
       )}
     </>
   );
 
   return embedded ? content : (
-    <div className="container-wide" style={{ padding: '48px 24px 80px', flex: 1 }}>
+    <div className="container-wide py-12 pb-20 flex-1 px-6">
       {content}
     </div>
   );

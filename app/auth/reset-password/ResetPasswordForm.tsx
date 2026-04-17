@@ -4,13 +4,12 @@ import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePasswordResetConfirm } from '../../lib/hooks';
-import { CheckCircle, Eye, EyeOff } from 'lucide-react';
-
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 600,
-  letterSpacing: '0.1em', textTransform: 'uppercase',
-  color: 'var(--text-muted)', marginBottom: 6,
-};
+import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import PasswordInput from '../../components/PasswordInput';
 
 export default function ResetPasswordForm() {
   const params = useSearchParams();
@@ -21,7 +20,6 @@ export default function ResetPasswordForm() {
   const [token, setToken] = useState(tokenParam);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -45,12 +43,12 @@ export default function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div style={{ textAlign: 'center', padding: '8px 0' }}>
-        <CheckCircle size={44} color='var(--color-success)' style={{ margin: '0 auto 16px', display: 'block' }} />
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+      <div className="text-center py-2">
+        <CheckCircle size={44} color="var(--color-success)" className="mx-auto mb-4 block" />
+        <p className="text-[14px] text-muted-foreground leading-relaxed">
           ¡Contraseña actualizada! Ahora puedes iniciar sesión.
         </p>
-        <Link href="/auth/login" className="btn btn-primary" style={{ display: 'inline-block', marginTop: 24, padding: '10px 24px' }}>
+        <Link href="/auth/login" className={cn(buttonVariants(), 'mt-6 inline-flex')}>
           Iniciar sesión
         </Link>
       </div>
@@ -58,87 +56,85 @@ export default function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <label style={labelStyle}>Correo electrónico</label>
-        <input
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="email" className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Correo electrónico
+        </Label>
+        <Input
+          id="email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="field"
           placeholder="tu@correo.com"
           disabled={confirm.isPending}
+          className="h-10"
         />
       </div>
 
-      <div>
-        <label style={labelStyle}>Código de verificación</label>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="token" className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Código de verificación
+        </Label>
+        <Input
+          id="token"
           type="text"
           required
           value={token}
           onChange={(e) => setToken(e.target.value)}
-          className="field"
           placeholder="Código recibido por correo"
           disabled={confirm.isPending}
-          style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}
+          className="h-10 font-mono tracking-[0.05em]"
         />
       </div>
 
-      <div>
-        <label style={labelStyle}>Nueva contraseña</label>
-        <div style={{ position: 'relative' }}>
-          <input
-            type={showPassword ? 'text' : 'password'}
-            required
-            minLength={8}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="field"
-            placeholder="Mín. 8 caracteres"
-            disabled={confirm.isPending}
-            style={{ paddingRight: 40 }}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
-            tabIndex={-1}
-          >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="new-password" className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Nueva contraseña
+        </Label>
+        <PasswordInput
+          id="new-password"
+          required
+          minLength={8}
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Mín. 8 caracteres"
+          disabled={confirm.isPending}
+          className="h-10"
+        />
       </div>
 
-      <div>
-        <label style={labelStyle}>Confirmar contraseña</label>
-        <input
-          type={showPassword ? 'text' : 'password'}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="confirm-password" className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Confirmar contraseña
+        </Label>
+        <PasswordInput
+          id="confirm-password"
           required
           minLength={8}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="field"
           placeholder="Repite tu nueva contraseña"
           disabled={confirm.isPending}
+          className="h-10"
         />
       </div>
 
       {(validationError || confirm.isError) && (
-        <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--color-error) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-error) 30%, transparent)', borderRadius: 8, fontSize: 13, color: 'var(--color-error)' }}>
+        <div className="px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-lg text-[13px] text-destructive">
           {validationError || 'Error al restablecer. El código puede haber expirado.'}
         </div>
       )}
 
-      <button type="submit" className="btn btn-primary" disabled={confirm.isPending} style={{ width: '100%', marginTop: 4, padding: '13px' }}>
+      <Button type="submit" disabled={confirm.isPending} className="w-full h-11 mt-1">
         {confirm.isPending ? 'Guardando…' : 'Cambiar contraseña'}
-      </button>
+      </Button>
 
-      <div style={{ textAlign: 'center' }}>
-        <Link href="/auth/login" style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none' }}>
-          ← Iniciar sesión
+      <div className="text-center">
+        <Link href="/auth/login" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground no-underline hover:text-foreground transition-colors">
+          <ArrowLeft size={13} /> Iniciar sesión
         </Link>
       </div>
     </form>

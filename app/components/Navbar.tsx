@@ -9,23 +9,9 @@ import { auth } from '../lib/api/auth';
 import { useProfile } from '../lib/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import UserAvatar from './UserAvatar';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Sun, Moon, X, Menu, LayoutDashboard, Heart } from 'lucide-react';
-
-const iconBtn: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 34,
-  height: 34,
-  borderRadius: 8,
-  border: '1px solid var(--border-light)',
-  background: 'var(--bg-elevated)',
-  color: 'var(--text-secondary)',
-  cursor: 'pointer',
-  fontSize: 14,
-  transition: 'all 0.15s',
-  flexShrink: 0,
-};
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -54,7 +40,6 @@ export default function Navbar() {
     router.push('/listings');
   };
 
-  // Panel + Favorites navigate to login if unauthenticated
   const handleProtectedNav = (href: string) => {
     setMenuOpen(false);
     if (!profile) {
@@ -68,192 +53,179 @@ export default function Navbar() {
   const dashboardActive = pathname === '/dashboard' || pathname.startsWith('/dashboard');
   const favoritesActive = pathname === '/favorites';
 
-  const navLinkStyle = (active: boolean): React.CSSProperties => ({
-    padding: '6px 14px',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 500,
-    color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-    background: active ? 'var(--bg-elevated)' : 'transparent',
-    textDecoration: 'none',
-    transition: 'all 0.15s',
-    border: `1px solid ${active ? 'var(--border-light)' : 'transparent'}`,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 5,
-  });
+  const navLinkClass = (active: boolean) =>
+    cn(
+      'flex items-center gap-[5px] px-[14px] py-[6px] rounded-md text-[13px] font-medium transition-all duration-150 no-underline cursor-pointer border',
+      active
+        ? 'text-foreground bg-[var(--bg-elevated)] border-[var(--border-light)]'
+        : 'text-muted-foreground bg-transparent border-transparent hover:text-foreground hover:bg-[var(--bg-elevated)]',
+    );
 
   return (
     <header
+      className={cn(
+        'sticky top-0 z-50 transition-all duration-300',
+        scrolled
+          ? 'border-b border-border backdrop-blur-[16px]'
+          : 'border-b border-transparent',
+      )}
       style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
         background: scrolled
           ? 'color-mix(in srgb, var(--bg-canvas) 92%, transparent)'
           : 'transparent',
-        borderBottom: scrolled ? '1px solid var(--border)' : '1px solid transparent',
-        backdropFilter: scrolled ? 'blur(16px)' : 'none',
-        transition: 'all 0.3s ease',
       }}
     >
       <div className="container-wide">
-        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+        <nav className="flex items-center justify-between h-16">
 
           {/* Logo */}
           <Link
             href="/"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1.4rem',
-              fontWeight: 500,
-              color: 'var(--text-primary)',
-              textDecoration: 'none',
-              letterSpacing: '-0.02em',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
+            className="no-underline flex items-center gap-1.5 tracking-[-0.02em]"
+            style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 500, color: 'var(--text-primary)' }}
           >
-            <span style={{ color: 'var(--accent)' }}>◆</span>
+            <span className="text-primary">◆</span>
             <span>Tienda</span>
           </Link>
 
           {/* Desktop nav */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="hidden-mobile">
-            {/* Browse */}
-            <Link href="/listings" style={navLinkStyle(browseActive)}>
+          <div className="hidden-mobile flex items-center gap-1">
+            <Link href="/listings" className={navLinkClass(browseActive)}>
               {'Explorar'}
             </Link>
 
-            {/* Panel — always visible, auth-gated */}
-            <button onClick={() => handleProtectedNav('/dashboard')} style={navLinkStyle(dashboardActive)}>
+            <button
+              onClick={() => handleProtectedNav('/dashboard')}
+              className={navLinkClass(dashboardActive)}
+            >
               <LayoutDashboard size={13} />
               Panel
             </button>
 
-            {/* Favorites — always visible, auth-gated */}
-            <button onClick={() => handleProtectedNav('/favorites')} style={navLinkStyle(favoritesActive)}>
+            <button
+              onClick={() => handleProtectedNav('/favorites')}
+              className={navLinkClass(favoritesActive)}
+            >
               <Heart size={13} />
               Favoritos
             </button>
           </div>
 
           {/* Right controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="flex items-center gap-2">
 
             {/* Theme toggle */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={toggleTheme}
-              style={iconBtn}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              className="bg-[var(--bg-elevated)] text-muted-foreground"
             >
               {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
+            </Button>
 
             {/* Auth (desktop) */}
             {profile ? (
               <Link
                 href="/profile"
-                className="hidden-mobile"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '5px 12px 5px 6px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-elevated)',
-                  textDecoration: 'none',
-                  transition: 'all 0.15s',
-                }}
+                className="hidden-mobile flex items-center gap-2 px-3 py-[5px] rounded-lg border border-[var(--border-light)] bg-[var(--bg-elevated)] no-underline transition-all duration-150 hover:border-[var(--border-accent)]"
               >
                 <UserAvatar name={profile.name} size={26} />
-                <span style={{ fontSize: 13, color: 'var(--text-primary)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span
+                  className="text-[13px] text-foreground max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap"
+                >
                   {profile.name.split(' ')[0]}
                 </span>
               </Link>
             ) : (
-              <div style={{ display: 'flex', gap: 6 }} className="hidden-mobile">
-                <Link href="/auth/login" className="btn btn-ghost" style={{ padding: '7px 14px', fontSize: 13 }}>
-                  {'Iniciar sesión'}
+              <div className="hidden-mobile flex gap-1.5">
+                <Link href="/auth/login" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
+                  Iniciar sesión
                 </Link>
-                <Link href="/auth/register" className="btn btn-primary" style={{ padding: '7px 14px', fontSize: 13 }}>
-                  {'Registrarse'}
+                <Link href="/auth/register" className={cn(buttonVariants({ size: 'sm' }))}>
+                  Registrarse
                 </Link>
               </div>
             )}
 
             {/* Mobile hamburger */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setMenuOpen(!menuOpen)}
-              style={{ ...iconBtn, display: 'none' }}
-              className="show-mobile"
+              className="show-mobile hidden border border-[var(--border-light)] bg-[var(--bg-elevated)]"
               aria-label="Toggle menu"
             >
               {menuOpen ? <X size={16} /> : <Menu size={16} />}
-            </button>
+            </Button>
           </div>
         </nav>
 
         {/* Mobile drawer */}
         {menuOpen && (
-          <div style={{ borderTop: '1px solid var(--border)', padding: '16px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="border-t border-border py-4 flex flex-col gap-1">
             <Link
               href="/listings"
               onClick={() => setMenuOpen(false)}
-              style={{
-                padding: '10px 16px', fontSize: 14, color: 'var(--text-primary)',
-                textDecoration: 'none', borderRadius: 6,
-                background: browseActive ? 'var(--bg-elevated)' : 'transparent',
-              }}
+              className={cn(
+                'px-4 py-2.5 text-[14px] no-underline rounded-md text-foreground transition-all',
+                browseActive ? 'bg-[var(--bg-elevated)]' : 'bg-transparent',
+              )}
             >
               {'Explorar'}
             </Link>
 
             <button
               onClick={() => handleProtectedNav('/dashboard')}
-              style={{
-                padding: '10px 16px', fontSize: 14, color: 'var(--text-primary)',
-                background: dashboardActive ? 'var(--bg-elevated)' : 'transparent',
-                border: 'none', cursor: 'pointer', textAlign: 'left', borderRadius: 6,
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}
+              className={cn(
+                'px-4 py-2.5 text-[14px] text-foreground rounded-md border-none cursor-pointer text-left flex items-center gap-2 transition-all',
+                dashboardActive ? 'bg-[var(--bg-elevated)]' : 'bg-transparent',
+              )}
             >
               <LayoutDashboard size={14} /> Panel
             </button>
 
             <button
               onClick={() => handleProtectedNav('/favorites')}
-              style={{
-                padding: '10px 16px', fontSize: 14, color: 'var(--text-primary)',
-                background: favoritesActive ? 'var(--bg-elevated)' : 'transparent',
-                border: 'none', cursor: 'pointer', textAlign: 'left', borderRadius: 6,
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}
+              className={cn(
+                'px-4 py-2.5 text-[14px] text-foreground rounded-md border-none cursor-pointer text-left flex items-center gap-2 transition-all',
+                favoritesActive ? 'bg-[var(--bg-elevated)]' : 'bg-transparent',
+              )}
             >
               <Heart size={14} /> Favoritos
             </button>
 
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4, display: 'flex', gap: 8, paddingLeft: 16 }}>
+            <div className="border-t border-border pt-3 mt-1 flex gap-2 pl-4">
               {profile ? (
                 <>
-                  <Link href="/profile" className="btn btn-outline" style={{ fontSize: 13 }} onClick={() => setMenuOpen(false)}>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                  >
                     {profile.name.split(' ')[0]} · Perfil
                   </Link>
-                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={handleLogout}>
+                  <Button variant="ghost" size="sm" onClick={handleLogout}>
                     Salir
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <>
-                  <Link href="/auth/login" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setMenuOpen(false)}>
-                    {'Iniciar sesión'}
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+                  >
+                    Iniciar sesión
                   </Link>
-                  <Link href="/auth/register" className="btn btn-primary" style={{ fontSize: 13 }} onClick={() => setMenuOpen(false)}>
-                    {'Registrarse'}
+                  <Link
+                    href="/auth/register"
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(buttonVariants({ size: 'sm' }))}
+                  >
+                    Registrarse
                   </Link>
                 </>
               )}

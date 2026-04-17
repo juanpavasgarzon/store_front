@@ -1,8 +1,12 @@
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { listings, categories } from './lib/api';
 import type { ListingResponse, CategoryResponse } from './lib/types';
 import ListingCard from './components/ListingCard';
 import Navbar from './components/Navbar';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 async function getHomeData(): Promise<{
   trending: ListingResponse[];
@@ -64,12 +68,12 @@ export default async function HomePage() {
               Anuncios seleccionados en todas las categorías. Descubre artículos únicos, conecta con vendedores y compra con confianza.
             </p>
 
-            <form className="animate-fade-up delay-300" action="/search" method="GET" style={{ display: 'flex', gap: 8, maxWidth: 540 }}>
-              <input name="q" type="text" placeholder="Buscar anuncios, categorías…" className="field" style={{ flex: 1, fontSize: 14 }} />
-              <button type="submit" className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>Buscar</button>
+            <form className="animate-fade-up delay-300 flex gap-2" action="/search" method="GET" style={{ maxWidth: 540 }}>
+              <Input name="q" type="text" placeholder="Buscar anuncios, categorías…" className="flex-1 h-11 text-[14px]" />
+              <Button type="submit" className="h-11 px-5 whitespace-nowrap">Buscar</Button>
             </form>
-            <div className="animate-fade-up delay-400" style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-              <Link href="/listings" className="btn btn-outline" style={{ fontSize: 13 }}>Ver todos →</Link>
+            <div className="animate-fade-up delay-400 flex gap-3 mt-4">
+              <Link href="/listings" className={cn(buttonVariants({ variant: 'outline' }), 'text-[13px] inline-flex items-center gap-1.5')}>Ver todos <ArrowRight size={14} /></Link>
             </div>
 
             <div className="animate-fade-up delay-400" style={{ display: 'flex', gap: 36, marginTop: 48 }}>
@@ -126,7 +130,7 @@ export default async function HomePage() {
             <p style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--text-muted)', marginBottom: 16 }}>◇</p>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 400, marginBottom: 12 }}>Aún no hay anuncios</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: 28 }}>Sé el primero en publicar un anuncio.</p>
-            <Link href="/auth/register" className="btn btn-primary">Comenzar</Link>
+            <Link href="/auth/register" className={cn(buttonVariants())}>Comenzar</Link>
           </div>
         </section>
       )}

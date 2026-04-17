@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -15,59 +17,23 @@ interface EmptyStateProps {
 
 export default function EmptyState({ icon, title, subtitle, action }: EmptyStateProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '38vh',
-        gap: 24,
-        textAlign: 'center',
-        padding: '60px 24px',
-      }}
-    >
+    <div className="flex flex-col items-center justify-center min-h-[38vh] gap-6 text-center px-6 py-[60px]">
       {icon && (
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: '50%',
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-light)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-muted)',
-          }}
-        >
+        <div className="w-18 h-18 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-light)] flex items-center justify-center text-muted-foreground"
+          style={{ width: 72, height: 72 }}>
           {icon}
         </div>
       )}
 
       <div>
         <p
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '1.5rem',
-            fontWeight: 300,
-            marginBottom: 8,
-            color: 'var(--text-primary)',
-            lineHeight: 1.2,
-          }}
+          className="text-foreground font-light leading-tight mb-2"
+          style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem' }}
         >
           {title}
         </p>
         {subtitle && (
-          <p
-            style={{
-              fontSize: 14,
-              color: 'var(--text-muted)',
-              maxWidth: 360,
-              margin: '0 auto',
-              lineHeight: 1.7,
-            }}
-          >
+          <p className="text-sm text-muted-foreground max-w-[360px] mx-auto leading-relaxed">
             {subtitle}
           </p>
         )}
@@ -75,19 +41,11 @@ export default function EmptyState({ icon, title, subtitle, action }: EmptyState
 
       {action && (
         action.onClick ? (
-          <button
-            onClick={action.onClick}
-            className="btn btn-outline"
-            style={{ fontSize: 13, marginTop: 4 }}
-          >
+          <button onClick={action.onClick} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-1')}>
             {action.label}
           </button>
         ) : (
-          <Link
-            href={action.href}
-            className="btn btn-outline"
-            style={{ fontSize: 13, marginTop: 4 }}
-          >
+          <Link href={action.href} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-1')}>
             {action.label}
           </Link>
         )

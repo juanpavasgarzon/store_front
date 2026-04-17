@@ -3,13 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePasswordResetRequest } from '../../lib/hooks';
-import { CheckCircle, Mail } from 'lucide-react';
-
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 600,
-  letterSpacing: '0.1em', textTransform: 'uppercase',
-  color: 'var(--text-muted)', marginBottom: 6,
-};
+import { CheckCircle, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
@@ -25,53 +22,58 @@ export default function ForgotPasswordForm() {
 
   if (sent) {
     return (
-      <div style={{ textAlign: 'center', padding: '8px 0' }}>
-        <CheckCircle size={44} color='var(--color-success)' style={{ margin: '0 auto 16px', display: 'block' }} />
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+      <div className="text-center py-2">
+        <CheckCircle size={44} color="var(--color-success)" className="mx-auto mb-4 block" />
+        <p className="text-[14px] text-muted-foreground leading-relaxed">
           Revisa tu correo. Si existe una cuenta asociada, recibirás las instrucciones en breve.
         </p>
-        <Link href="/auth/login" style={{ display: 'inline-block', marginTop: 24, fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
-          Iniciar sesión →
+        <Link
+          href="/auth/login"
+          className="inline-flex items-center gap-1.5 mt-6 text-[13px] text-primary no-underline"
+        >
+          Iniciar sesión <ArrowRight size={13} />
         </Link>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <label style={labelStyle}>Correo electrónico</label>
-        <div style={{ position: 'relative' }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="email" className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Correo electrónico
+        </Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
             <Mail size={15} />
           </span>
-          <input
+          <Input
+            id="email"
             type="email"
             required
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="field"
             placeholder="tu@correo.com"
             disabled={request.isPending}
-            style={{ paddingLeft: 36 }}
+            className="h-10 pl-9"
           />
         </div>
       </div>
 
       {request.isError && (
-        <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--color-error) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-error) 30%, transparent)', borderRadius: 8, fontSize: 13, color: 'var(--color-error)' }}>
+        <div className="px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-lg text-[13px] text-destructive">
           Error al enviar. Intenta de nuevo.
         </div>
       )}
 
-      <button type="submit" className="btn btn-primary" disabled={request.isPending} style={{ width: '100%', marginTop: 4, padding: '13px' }}>
+      <Button type="submit" disabled={request.isPending} className="w-full h-11 mt-1">
         {request.isPending ? 'Enviando…' : 'Enviar instrucciones'}
-      </button>
+      </Button>
 
-      <div style={{ textAlign: 'center' }}>
-        <Link href="/auth/login" style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none' }}>
-          ← Iniciar sesión
+      <div className="text-center">
+        <Link href="/auth/login" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground no-underline hover:text-foreground transition-colors">
+          <ArrowLeft size={13} /> Iniciar sesión
         </Link>
       </div>
     </form>

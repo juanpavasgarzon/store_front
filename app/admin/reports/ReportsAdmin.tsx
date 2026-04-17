@@ -6,6 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useProfile, useAdminReports, useUpdateReportStatus, useDebounce } from '../../lib/hooks';
 import type { ReportResponse, ReportStatus } from '../../lib/types/reports';
 import { Flag, ChevronLeft, ChevronRight, ExternalLink, Search } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const STATUS_LABELS: Record<ReportStatus, string> = {
   pending: 'Pendiente',
@@ -47,43 +53,40 @@ function ReportCard({ report }: { report: ReportResponse }) {
   const statusColor = STATUS_COLORS[report.status];
 
   return (
-    <div style={{
-      background: 'var(--bg-surface)',
-      border: `1px solid ${open ? 'var(--border-accent)' : 'var(--border)'}`,
-      borderRadius: 12,
-      overflow: 'hidden',
-      transition: 'border-color 0.15s',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px', flexWrap: 'wrap' }}>
-        {/* Icon + info */}
-        <div style={{
-          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-          background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
-          border: `1px solid color-mix(in srgb, ${statusColor} 25%, transparent)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
+    <Card className={cn('overflow-hidden transition-colors duration-150', open && 'border-[var(--border-accent)]')}>
+      <div className="flex items-start gap-4 px-5 py-[18px] flex-wrap">
+        {/* Icon */}
+        <div
+          className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center border"
+          style={{
+            background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
+            borderColor: `color-mix(in srgb, ${statusColor} 25%, transparent)`,
+          }}
+        >
           <Flag size={15} color={statusColor} />
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <p className="text-[13px] font-semibold text-foreground">
               {REASON_LABELS[report.reason] ?? report.reason}
             </p>
-            <span style={{
-              fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-              padding: '3px 8px', borderRadius: 999,
-              background: `color-mix(in srgb, ${statusColor} 15%, transparent)`,
-              color: statusColor,
-              border: `1px solid color-mix(in srgb, ${statusColor} 30%, transparent)`,
-            }}>
+            <Badge
+              variant="outline"
+              className="text-[10px] font-semibold tracking-[0.08em] uppercase"
+              style={{
+                background: `color-mix(in srgb, ${statusColor} 15%, transparent)`,
+                color: statusColor,
+                borderColor: `color-mix(in srgb, ${statusColor} 30%, transparent)`,
+              }}
+            >
               {STATUS_LABELS[report.status]}
-            </span>
+            </Badge>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          <p className="text-[12px] text-muted-foreground">
             {formatDate(report.createdAt)}
             {report.details && (
-              <span style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>
+              <span className="ml-2 text-muted-foreground">
                 · &ldquo;{report.details.slice(0, 60)}{report.details.length > 60 ? '…' : ''}&rdquo;
               </span>
             )}
@@ -91,62 +94,61 @@ function ReportCard({ report }: { report: ReportResponse }) {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <div className="flex gap-2 items-center shrink-0">
           <Link
             href={`/listings/${report.listingId}`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11,
-              color: 'var(--accent)', textDecoration: 'none',
-              padding: '5px 10px', border: '1px solid var(--border-accent)', borderRadius: 6,
-              whiteSpace: 'nowrap',
-            }}
+            className={cn(buttonVariants({ variant: 'outline', size: 'xs' }))}
           >
             <ExternalLink size={11} /> Ver anuncio
           </Link>
-          <button
-            className="btn btn-ghost"
-            style={{ fontSize: 11, padding: '5px 10px', color: open ? 'var(--accent)' : 'var(--text-muted)' }}
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={() => setOpen(!open)}
+            className={cn('text-[11px]', open ? 'text-primary' : 'text-muted-foreground')}
           >
             {open ? 'Ocultar' : 'Gestionar'}
-          </button>
+          </Button>
         </div>
       </div>
 
       {open && (
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
-          {report.details && (
-            <p style={{
-              fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6,
-              padding: '10px 14px', background: 'var(--bg-surface)', borderRadius: 8,
-              borderLeft: '3px solid var(--border-accent)', marginBottom: 16,
-            }}>
-              &ldquo;{report.details}&rdquo;
-            </p>
-          )}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>
-              Cambiar estado
-            </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {NEXT_STATUSES[report.status].map((s) => (
-                <button
-                  key={s}
-                  className="btn btn-outline"
-                  style={{ fontSize: 12, padding: '6px 14px', color: STATUS_COLORS[s] }}
-                  disabled={updateStatus.isPending}
-                  onClick={() => updateStatus.mutate({ id: report.id, status: s })}
-                >
-                  {STATUS_LABELS[s]}
-                </button>
-              ))}
+        <>
+          <Separator />
+          <div className="px-5 py-4 bg-[var(--bg-elevated)]">
+            {report.details && (
+              <p
+                className="text-[13px] text-muted-foreground leading-relaxed px-3.5 py-2.5 bg-card rounded-lg mb-4 border-l-[3px]"
+                style={{ borderLeftColor: 'var(--border-accent)' }}
+              >
+                &ldquo;{report.details}&rdquo;
+              </p>
+            )}
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.08em] uppercase text-muted-foreground mb-2.5">
+                Cambiar estado
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {NEXT_STATUSES[report.status].map((s) => (
+                  <Button
+                    key={s}
+                    variant="outline"
+                    size="xs"
+                    disabled={updateStatus.isPending}
+                    onClick={() => updateStatus.mutate({ id: report.id, status: s })}
+                    style={{ color: STATUS_COLORS[s] }}
+                  >
+                    {STATUS_LABELS[s]}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -186,8 +188,8 @@ export default function ReportsAdmin({ embedded }: { embedded?: boolean } = {}) 
 
   if (!embedded && profileLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">Cargando…</p>
       </div>
     );
   }
@@ -199,38 +201,35 @@ export default function ReportsAdmin({ embedded }: { embedded?: boolean } = {}) 
   const content = (
     <>
       {!embedded && (
-        <div style={{ marginBottom: 40 }}>
-          <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8, fontWeight: 600 }}>
+        <div className="mb-10">
+          <p className="text-[11px] tracking-[0.14em] uppercase text-primary mb-2 font-semibold">
             ADMINISTRACIÓN
           </p>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)', fontWeight: 300, marginBottom: 8 }}>
-            Reportes de <em style={{ fontStyle: 'italic', color: 'var(--accent-light)' }}>anuncios</em>
+          <h1 className="font-light mb-2" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)' }}>
+            Reportes de <em className="italic" style={{ color: 'var(--accent-light)' }}>anuncios</em>
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+          <p className="text-muted-foreground text-[14px]">
             {pendingCount > 0
-              ? <span style={{ color: '#CC9E6E', fontWeight: 500 }}>{pendingCount} pendiente{pendingCount !== 1 ? 's' : ''} de revisión</span>
+              ? <span className="font-medium" style={{ color: '#CC9E6E' }}>{pendingCount} pendiente{pendingCount !== 1 ? 's' : ''} de revisión</span>
               : 'Sin reportes pendientes'}
           </p>
         </div>
       )}
 
       {/* Search */}
-      <div style={{ position: 'relative', maxWidth: 360, marginBottom: 16 }}>
-        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}>
-          <Search size={15} />
-        </span>
-        <input
+      <div className="relative max-w-[360px] mb-4">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <Input
           type="search"
-          className="field"
           placeholder="Buscar por motivo o detalle…"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          style={{ paddingLeft: 36, fontSize: 13 }}
+          className="pl-9 text-[13px] h-9"
         />
       </div>
 
       {/* Status filter pills */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="flex gap-2 mb-6 flex-wrap">
         {(['all', 'pending', 'reviewed', 'dismissed', 'action_taken'] as const).map((s) => {
           const active = statusFilter === s;
           const count = s === 'all' ? allReports.length : allReports.filter((r) => r.status === s).length;
@@ -238,12 +237,12 @@ export default function ReportsAdmin({ embedded }: { embedded?: boolean } = {}) 
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              style={{
-                padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                border: active ? '1px solid var(--accent-dim)' : '1px solid var(--border-light)',
-                background: active ? 'var(--bg-elevated)' : 'transparent',
-                color: active ? 'var(--accent)' : 'var(--text-muted)',
-              }}
+              className={cn(
+                'px-3.5 py-1.5 rounded-full text-[12px] font-medium cursor-pointer border transition-all',
+                active
+                  ? 'border-[var(--accent-dim)] bg-[var(--bg-elevated)] text-primary'
+                  : 'border-[var(--border-light)] bg-transparent text-muted-foreground hover:text-foreground',
+              )}
             >
               {s === 'all' ? 'Todos' : STATUS_LABELS[s]} ({count})
             </button>
@@ -253,15 +252,15 @@ export default function ReportsAdmin({ embedded }: { embedded?: boolean } = {}) 
 
       {/* List */}
       {isLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="flex flex-col gap-2.5">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} style={{ height: 72, background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border)', opacity: 0.5 }} />
+            <div key={i} className="h-[72px] bg-card rounded-xl border border-border opacity-50" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-          <Flag size={44} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.3 }} />
-          <p style={{ fontSize: 15 }}>
+        <div className="text-center py-[60px] text-muted-foreground">
+          <Flag size={44} className="mx-auto mb-4 block opacity-30" />
+          <p className="text-[15px]">
             {searchInput
               ? 'Sin resultados para esta búsqueda.'
               : statusFilter === 'all'
@@ -270,37 +269,39 @@ export default function ReportsAdmin({ embedded }: { embedded?: boolean } = {}) 
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="flex flex-col gap-2.5">
           {filtered.map((r) => <ReportCard key={r.id} report={r} />)}
         </div>
       )}
 
-      {/* Pagination — only show when no local filters applied */}
+      {/* Pagination */}
       {!searchInput && statusFilter === 'all' && (meta?.hasNextPage || meta?.hasPreviousPage) && (
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 32, justifyContent: 'center' }}>
-          <button
-            className="btn btn-outline"
+        <div className="flex gap-3 items-center mt-8 justify-center">
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!meta.hasPreviousPage}
             onClick={() => setCursor(meta.previousCursor ?? undefined)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+            className="flex items-center gap-1.5"
           >
             <ChevronLeft size={15} /> Anterior
-          </button>
-          <button
-            className="btn btn-outline"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!meta.hasNextPage}
             onClick={() => setCursor(meta.nextCursor ?? undefined)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+            className="flex items-center gap-1.5"
           >
             Siguiente <ChevronRight size={15} />
-          </button>
+          </Button>
         </div>
       )}
     </>
   );
 
   return embedded ? content : (
-    <div className="container-wide" style={{ padding: '48px 24px 80px', flex: 1 }}>
+    <div className="container-wide py-12 pb-20 flex-1 px-6">
       {content}
     </div>
   );

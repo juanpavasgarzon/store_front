@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { auth, setTokens } from '../../lib/api';
 import { queryKeys } from '../../lib/queryKeys';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import PasswordInput from '../../components/PasswordInput';
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
@@ -39,39 +43,55 @@ export default function LoginForm() {
     }
   };
 
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-    color: 'var(--text-muted)',
-    marginBottom: 6,
-  };
-
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <label style={labelStyle}>Correo electrónico</label>
-        <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="field" placeholder="tu@correo.com" disabled={loading} />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="email" className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Correo electrónico
+        </Label>
+        <Input
+          id="email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="tu@correo.com"
+          disabled={loading}
+          className="h-10"
+        />
       </div>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <label style={{ ...labelStyle, marginBottom: 0 }}>Contraseña</label>
-          <Link href="/auth/forgot-password" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex justify-between items-center">
+          <Label htmlFor="password" className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+            Contraseña
+          </Label>
+          <Link href="/auth/forgot-password" className="text-[11px] text-primary no-underline">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
-        <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="field" placeholder="Mín. 8 caracteres" disabled={loading} />
+        <PasswordInput
+          id="password"
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Mín. 8 caracteres"
+          disabled={loading}
+          className="h-10"
+        />
       </div>
+
       {error && (
-        <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--color-error) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-error) 30%, transparent)', borderRadius: 8, fontSize: 13, color: 'var(--color-error)' }}>
+        <div className="px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-lg text-[13px] text-destructive">
           {error}
         </div>
       )}
-      <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', marginTop: 4, padding: '13px' }}>
+
+      <Button type="submit" disabled={loading} className="w-full h-11 mt-1">
         {loading ? 'Ingresando…' : 'Iniciar sesión'}
-      </button>
+      </Button>
     </form>
   );
 }

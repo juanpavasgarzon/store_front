@@ -1,32 +1,49 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   useCreateListing, usePublicCategories, useUploadPhotos, useCategoryAttributes,
 } from '../../lib/hooks';
 import type { CategoryAttributeResponse } from '../../lib/types/categories';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { ArrowRight } from 'lucide-react';
 
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 600,
-  letterSpacing: '0.1em', textTransform: 'uppercase',
-  color: 'var(--text-muted)', marginBottom: 6,
-};
-const fieldGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 };
+const LocationPicker = dynamic(() => import('../../components/LocationPicker'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ height: 280, borderRadius: 10, background: 'var(--bg-elevated)', border: '1px solid var(--border)' }} />
+  ),
+});
 
-// ─── Step 1: Listing form ─────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface FormState {
+interface DetailsData {
   categoryId: string;
   title: string;
   description: string;
-  price: string;
+  price: number;
   location: string;
-  sector: string;
-  status: 'active' | 'draft';
+  latitude?: number;
+  longitude?: number;
+  attributeValues: { attributeId: string; value: string }[];
 }
 
 type AttributeValues = Record<string, string>;
+type PhotoEntry = { file: File; url: string };
 
 function formatPriceInput(raw: string): string {
   const clean = raw.replace(/[^0-9.]/g, '');
@@ -35,7 +52,9 @@ function formatPriceInput(raw: string): string {
   return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart;
 }
 
-// ─── Step 1: Details form ─────────────────────────────────────────────────────
+const labelClass = 'text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground';
+
+// ─── Dynamic attribute field ──────────────────────────────────────────────────
 
 function DynamicAttributeField({
   attribute,
@@ -48,29 +67,26 @@ function DynamicAttributeField({
 }) {
   if (attribute.valueType === 'boolean') {
     return (
-      <div style={{ display: 'flex', gap: 12 }}>
+      <div className="flex gap-3">
         {['true', 'false'].map((option) => (
           <label
             key={option}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-              padding: '10px 16px', borderRadius: 8,
-              border: `1px solid ${value === option ? 'var(--accent-dim)' : 'var(--border-light)'}`,
-              background: value === option ? 'var(--bg-elevated)' : 'transparent',
-              transition: 'all 0.15s',
-            }}
+            className={cn(
+              'flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg border transition-all duration-150',
+              value === option
+                ? 'border-[var(--accent-dim)] bg-[var(--bg-elevated)]'
+                : 'border-[var(--border-light)] bg-transparent',
+            )}
           >
             <input
               type="radio"
               name={attribute.key}
               value={option}
               checked={value === option}
-              onChange={(event) => onChange(event.target.value)}
-              style={{ accentColor: 'var(--accent)', width: 14, height: 14 }}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-[14px] h-[14px] accent-[var(--accent)]"
             />
-            <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>
-              {option === 'true' ? 'Sí' : 'No'}
-            </span>
+            <span className="text-[13px] text-foreground">{option === 'true' ? 'Sí' : 'No'}</span>
           </label>
         ))}
       </div>
@@ -79,351 +95,303 @@ function DynamicAttributeField({
 
   if (attribute.valueType === 'select') {
     return (
-      <select
-        className="field"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        style={{ fontSize: 13, appearance: 'none', cursor: 'pointer' }}
-      >
-        <option value="">Selecciona una opción</option>
-        {attribute.options.map((option) => (
-          <option key={option} value={option}>{option}</option>
-        ))}
-      </select>
+      <Select value={value} onValueChange={(v) => v && onChange(v)}>
+        <SelectTrigger className="text-[13px] h-10">
+          <SelectValue placeholder="Selecciona una opción">
+            {(v: string) => v || undefined}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {attribute.options.map((option) => (
+            <SelectItem key={option} value={option} className="text-[13px]">{option}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   }
 
   if (attribute.valueType === 'number') {
     return (
-      <input
+      <Input
         type="number"
-        className="field"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         placeholder="0"
-        style={{ fontSize: 13 }}
+        className="text-[13px] h-10"
       />
     );
   }
 
   return (
-    <input
+    <Input
       type="text"
-      className="field"
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(e) => onChange(e.target.value)}
       placeholder={attribute.name}
-      style={{ fontSize: 13 }}
+      className="text-[13px] h-10"
     />
   );
 }
 
-function ListingDetailsStep({ onCreated }: { onCreated: (id: string) => void }) {
-  const createListing = useCreateListing();
+// ─── Step 1: Detalles ─────────────────────────────────────────────────────────
+
+function DetailsStep({ onNext }: { onNext: (data: DetailsData) => void }) {
   const { data: catsData, isLoading: catsLoading } = usePublicCategories();
   const cats = catsData?.data ?? [];
 
-  const [form, setForm] = useState<FormState>({
-    categoryId: '', title: '', description: '',
-    price: '', location: '', sector: '', status: 'active',
-  });
+  const [categoryId, setCategoryId] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationName, setLocationName] = useState('');
   const [attributeValues, setAttributeValues] = useState<AttributeValues>({});
-  const [errors, setErrors] = useState<Partial<FormState>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: categoryAttributes = [], isLoading: attributesLoading } = useCategoryAttributes(
-    form.categoryId || null,
+    categoryId || null,
   );
 
-  const setField = (field: keyof FormState) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-      setForm((previous) => ({ ...previous, [field]: event.target.value }));
+  const parsedPrice = () => parseFloat(price.replace(/,/g, ''));
 
-  const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setForm((previous) => ({ ...previous, categoryId: event.target.value }));
-    setAttributeValues({});
+  const validate = (): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!categoryId) errs.categoryId = 'Selecciona una categoría';
+    if (!title.trim()) errs.title = 'El título es requerido';
+    if (description.trim().length < 10) errs.description = 'La descripción debe tener al menos 10 caracteres';
+    const p = parsedPrice();
+    if (isNaN(p) || p < 0) errs.price = 'Ingresa un precio válido';
+    if (!locationName.trim() && !coords) errs.location = 'Busca tu ubicación o coloca un pin en el mapa';
+    return errs;
   };
 
-  const setAttributeValue = (attributeId: string, value: string) => {
-    setAttributeValues((previous) => ({ ...previous, [attributeId]: value }));
-  };
-
-  const parsedPrice = () => parseFloat(form.price.replace(/,/g, ''));
-
-  const validate = (): Partial<FormState> => {
-    const validationErrors: Partial<FormState> = {};
-    if (!form.categoryId) { validationErrors.categoryId = 'Selecciona una categoría'; }
-    if (!form.title.trim()) { validationErrors.title = 'El título es requerido'; }
-    if (form.description.trim().length < 10) { validationErrors.description = 'La descripción debe tener al menos 10 caracteres'; }
-    const price = parsedPrice();
-    if (isNaN(price) || price < 0) { validationErrors.price = 'Ingresa un precio válido'; }
-    if (!form.location.trim()) { validationErrors.location = 'La ubicación es requerida'; }
-    return validationErrors;
-  };
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    setErrors({});
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
     const attributeValuesPayload = Object.entries(attributeValues)
-      .filter(([, value]) => value !== '' && value !== undefined)
+      .filter(([, v]) => v !== '' && v !== undefined)
       .map(([attributeId, value]) => ({ attributeId, value }));
 
-    const payload: Record<string, unknown> = {
-      categoryId: form.categoryId,
-      title: form.title.trim(),
-      description: form.description.trim(),
+    const loc = locationName.trim() || (coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : '');
+
+    const data: DetailsData = {
+      categoryId,
+      title: title.trim(),
+      description: description.trim(),
       price: parsedPrice(),
-      location: form.location.trim(),
-      status: form.status,
+      location: loc,
       attributeValues: attributeValuesPayload,
     };
-    if (form.sector.trim()) { payload.sector = form.sector.trim(); }
+    if (coords) { data.latitude = coords.lat; data.longitude = coords.lng; }
 
-    createListing.mutate(payload, { onSuccess: (listing) => onCreated(listing.id) });
+    onNext(data);
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 32 }}>
-        {/* ── Main details ── */}
-        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: -8 }}>
-            Información principal
-          </p>
+    <form onSubmit={handleNext} noValidate>
+      <Card>
+        <CardContent className="pt-7 flex flex-col gap-5">
+          {/* Row 1: Category | Title */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label className={labelClass}>Categoría</Label>
+              <Select value={categoryId} onValueChange={(v) => { if (v) { setCategoryId(v); setAttributeValues({}); } }} disabled={catsLoading}>
+                <SelectTrigger className="text-[13px] h-10">
+                  <SelectValue placeholder={catsLoading ? 'Cargando…' : 'Selecciona'}>
+                    {(v: string) => cats.find((c) => c.id === v)?.name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {cats.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id} label={cat.name} className="text-[13px]">{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.categoryId && <p className="text-[12px] text-destructive">{errors.categoryId}</p>}
+            </div>
 
-          <div style={fieldGroup}>
-            <label style={labelStyle}>{'Categoría'}</label>
-            <select
-              value={form.categoryId}
-              onChange={handleCategoryChange}
-              className="field"
-              disabled={catsLoading}
-              style={{ appearance: 'none', cursor: 'pointer' }}
-            >
-              <option value="">{catsLoading ? 'Cargando…' : 'Selecciona una categoría'}</option>
-              {cats.map((category) => (
-                <option key={category.id} value={category.id}>{category.name}</option>
-              ))}
-            </select>
-            {errors.categoryId && (
-              <p style={{ fontSize: 12, color: 'var(--color-error)' }}>{errors.categoryId}</p>
-            )}
+            <div className="flex flex-col gap-1.5">
+              <Label className={labelClass}>Título</Label>
+              <Input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Describe tu artículo"
+                maxLength={255}
+                className="h-10 text-[13px]"
+              />
+              {errors.title && <p className="text-[12px] text-destructive">{errors.title}</p>}
+            </div>
           </div>
 
           {/* Dynamic attributes */}
-          {form.categoryId && (
-            <div>
-              {attributesLoading ? (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Cargando atributos…</p>
-              ) : categoryAttributes.length > 0 ? (
-                <>
-                  <div style={{ height: 1, background: 'var(--border)', margin: '8px 0 24px' }} />
-                  <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 20 }}>
-                    Características específicas
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
-                    {categoryAttributes.map((attribute) => (
-                      <div key={attribute.id} style={fieldGroup}>
-                        <label style={labelStyle}>
-                          {attribute.name}
-                          {attribute.isRequired && (
-                            <span style={{ color: 'var(--accent)', marginLeft: 4 }}>*</span>
-                          )}
-                        </label>
-                        <DynamicAttributeField
-                          attribute={attribute}
-                          value={attributeValues[attribute.id] ?? ''}
-                          onChange={(value) => setAttributeValue(attribute.id, value)}
-                        />
-                      </div>
-                    ))}
+          {categoryId && !attributesLoading && categoryAttributes.length > 0 && (
+            <>
+              <Separator />
+              <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary -mb-1">
+                Características específicas
+              </p>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
+                {categoryAttributes.map((attribute) => (
+                  <div key={attribute.id} className="flex flex-col gap-1.5">
+                    <Label className={labelClass}>
+                      {attribute.name}
+                      {attribute.isRequired && <span className="text-primary ml-1">*</span>}
+                    </Label>
+                    <DynamicAttributeField
+                      attribute={attribute}
+                      value={attributeValues[attribute.id] ?? ''}
+                      onChange={(value) => setAttributeValues((p) => ({ ...p, [attribute.id]: value }))}
+                    />
                   </div>
-                </>
-              ) : null}
-            </div>
+                ))}
+              </div>
+              <Separator />
+            </>
           )}
 
-          <div style={fieldGroup}>
-            <label style={labelStyle}>{'Título'}</label>
-            <input type="text" value={form.title} onChange={setField('title')} className="field" placeholder={'Describe tu artículo en pocas palabras'} maxLength={255} />
-            {errors.title && <p style={{ fontSize: 12, color: 'var(--color-error)' }}>{errors.title}</p>}
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right' }}>{form.title.length}/255</p>
+          {/* Row 2: Description */}
+          <div className="flex flex-col gap-1.5">
+            <Label className={labelClass}>Descripción</Label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descripción detallada (mín. 10 caracteres)"
+              minLength={10}
+              maxLength={5000}
+              rows={5}
+              className={cn(
+                'w-full px-[14px] py-[11px] rounded-lg border border-input bg-transparent dark:bg-input/30 text-[13px]',
+                'text-foreground resize-y leading-relaxed outline-none transition-colors',
+                'focus:border-[var(--accent-dim)] placeholder:text-muted-foreground',
+              )}
+            />
+            {errors.description && <p className="text-[12px] text-destructive">{errors.description}</p>}
+            <p className="text-[11px] text-muted-foreground text-right">{description.length}/5000</p>
           </div>
 
-          <div style={fieldGroup}>
-            <label style={labelStyle}>{'Descripción'}</label>
-            <textarea value={form.description} onChange={setField('description')} className="field" placeholder={'Descripción detallada de tu artículo (mín. 10 caracteres)'} minLength={10} maxLength={5000} rows={6} style={{ resize: 'vertical', lineHeight: 1.6 }} />
-            {errors.description && <p style={{ fontSize: 12, color: 'var(--color-error)' }}>{errors.description}</p>}
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right' }}>{form.description.length}/5000</p>
-          </div>
-        </div>
-
-        {/* ── Price & location ── */}
-        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: -8 }}>
-            Precio y ubicación
-          </p>
-
-          <div style={fieldGroup}>
-            <label style={labelStyle}>{'Precio (USD)'}</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 14, pointerEvents: 'none' }}>$</span>
-              <input
-                type="text" inputMode="decimal"
-                value={form.price}
-                onChange={(e) => setForm((p) => ({ ...p, price: formatPriceInput(e.target.value) }))}
-                className="field" placeholder="0.00"
-                style={{ paddingLeft: 28 }}
+          {/* Row 3: Price */}
+          <div className="flex flex-col gap-1.5">
+            <Label className={labelClass}>Precio (USD)</Label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-[14px] pointer-events-none">$</span>
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(formatPriceInput(e.target.value))}
+                placeholder="0.00"
+                className="h-10 text-[13px] pl-7"
               />
             </div>
-            {errors.price && <p style={{ fontSize: 12, color: 'var(--color-error)' }}>{errors.price}</p>}
+            {errors.price && <p className="text-[12px] text-destructive">{errors.price}</p>}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div style={fieldGroup}>
-              <label style={labelStyle}>{'Ubicación'}</label>
-              <input type="text" value={form.location} onChange={setField('location')} className="field" placeholder={'Ciudad o barrio'} maxLength={120} />
-            </div>
-            <div style={fieldGroup}>
-              <label style={labelStyle}>{'Sector / zona'}</label>
-              <input type="text" value={form.sector} onChange={setField('sector')} className="field" placeholder={'Barrio opcional'} maxLength={80} />
-            </div>
-          </div>
-          {errors.location && <p style={{ fontSize: 12, color: 'var(--color-error)' }}>{errors.location}</p>}
-        </div>
-
-        {/* ── Publish settings ── */}
-        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)' }}>
-            Publicación
-          </p>
-
-          <div style={fieldGroup}>
-            <label style={labelStyle}>{'Estado'}</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {(['active', 'draft'] as const).map((s) => (
-                <label key={s} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: '12px 16px', borderRadius: 8, border: `1px solid ${form.status === s ? 'var(--accent-dim)' : 'var(--border-light)'}`, background: form.status === s ? 'var(--bg-elevated)' : 'transparent', transition: 'all 0.15s' }}>
-                  <input type="radio" name="status" value={s} checked={form.status === s} onChange={setField('status')} style={{ accentColor: 'var(--accent)', width: 16, height: 16 }} />
-                  <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                    {s === 'active' ? 'Activo (visible de inmediato)' : 'Borrador (guardar para después)'}
-                  </p>
-                </label>
-              ))}
-            </div>
+          {/* Row 4-5: Location (search + map) */}
+          <div className="flex flex-col gap-2">
+            <Label className={labelClass}>Ubicación</Label>
+            <LocationPicker
+              latitude={coords?.lat ?? null}
+              longitude={coords?.lng ?? null}
+              onChange={(lat, lng) => setCoords({ lat, lng })}
+              onClear={() => { setCoords(null); setLocationName(''); }}
+              onLocationName={setLocationName}
+            />
+            {locationName && (
+              <p className="text-[12px] text-muted-foreground flex items-center gap-1">
+                <span className="text-primary">✓</span> {locationName}
+              </p>
+            )}
+            {errors.location && <p className="text-[12px] text-destructive">{errors.location}</p>}
           </div>
 
-          {createListing.error && (
-            <div style={{ padding: '10px 14px', background: 'color-mix(in srgb, var(--color-error) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-error) 30%, transparent)', borderRadius: 8, fontSize: 13, color: 'var(--color-error)' }}>
-              {(createListing.error as Error).message}
-            </div>
-          )}
-
-          <button type="submit" className="btn btn-primary" disabled={createListing.isPending} style={{ padding: '14px', fontSize: 14 }}>
-            {createListing.isPending ? 'Publicando…' : 'Publicar anuncio'}
-          </button>
-        </div>
-      </div>
+          <Button type="submit" className="w-full h-11 text-[14px] mt-1 inline-flex items-center gap-2">
+            Siguiente <ArrowRight size={15} />
+          </Button>
+        </CardContent>
+      </Card>
     </form>
   );
 }
 
-// ─── Step 2: Photo upload ─────────────────────────────────────────────────────
+// ─── Step 2: Fotos ────────────────────────────────────────────────────────────
 
-function PhotoUploadStep({ listingId }: { listingId: string }) {
-  const router = useRouter();
-  const upload = useUploadPhotos(listingId);
+function PhotoStep({
+  photos,
+  setPhotos,
+  onNext,
+}: {
+  photos: PhotoEntry[];
+  setPhotos: React.Dispatch<React.SetStateAction<PhotoEntry[]>>;
+  onNext: () => void;
+}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [previews, setPreviews] = useState<{ file: File; url: string }[]>([]);
   const [dragOver, setDragOver] = useState(false);
-  const [uploadedCount, setUploadedCount] = useState(0);
 
   const addFiles = useCallback((files: FileList | null) => {
     if (!files) return;
-    const validFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
-    const next = validFiles.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
-    setPreviews((p) => [...p, ...next].slice(0, 10)); // max 10 photos
-  }, []);
+    const valid = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const next = valid.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
+    setPhotos((p) => [...p, ...next].slice(0, 10));
+  }, [setPhotos]);
 
-  const removePreview = (i: number) => {
-    setPreviews((p) => {
+  const removePhoto = (i: number) => {
+    setPhotos((p) => {
       URL.revokeObjectURL(p[i].url);
       return p.filter((_, idx) => idx !== i);
     });
   };
 
-  const handleUpload = () => {
-    if (previews.length === 0) { router.push(`/listings/${listingId}`); return; }
-    upload.mutate(previews.map((p) => p.file), {
-      onSuccess: (res) => {
-        setUploadedCount(res.length);
-        setTimeout(() => router.push(`/listings/${listingId}`), 1200);
-      },
-    });
-  };
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Success banner */}
-      <div style={{ padding: '16px 20px', background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 20, color: 'var(--color-success)' }}>✓</span>
-        <div>
-          <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>¡Anuncio creado exitosamente!</p>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Ahora puedes agregar fotos para hacerlo más atractivo.</p>
-        </div>
-      </div>
-
-      {/* Drop zone */}
+    <div className="flex flex-col gap-6">
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
         onClick={() => fileInputRef.current?.click()}
-        style={{
-          border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
-          borderRadius: 14, padding: '48px 24px', textAlign: 'center',
-          cursor: 'pointer', transition: 'all 0.2s',
-          background: dragOver ? 'color-mix(in srgb, var(--accent) 4%, transparent)' : 'var(--bg-surface)',
-        }}
+        className={cn(
+          'border-2 border-dashed rounded-[14px] px-6 py-14 text-center cursor-pointer transition-all duration-200',
+          dragOver
+            ? 'border-primary bg-[color-mix(in_srgb,var(--accent)_4%,transparent)]'
+            : 'border-border bg-card',
+        )}
       >
         <input
-          ref={fileInputRef} type="file" accept="image/*" multiple
-          style={{ display: 'none' }}
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
           onChange={(e) => addFiles(e.target.files)}
         />
-        <p style={{ fontSize: 32, marginBottom: 12, color: 'var(--text-muted)' }}>◈</p>
-        <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 6 }}>
+        <p className="text-[32px] mb-3 text-muted-foreground">◈</p>
+        <p className="text-[15px] font-medium text-foreground mb-1.5">
           Arrastra fotos aquí o haz clic para seleccionar
         </p>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          JPG, PNG, WEBP · máx. 10 fotos
-        </p>
+        <p className="text-[12px] text-muted-foreground">JPG, PNG, WEBP · máx. 10 fotos</p>
       </div>
 
-      {/* Previews */}
-      {previews.length > 0 && (
+      {photos.length > 0 && (
         <div>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>
-            {previews.length} foto{previews.length !== 1 ? 's' : ''} seleccionada{previews.length !== 1 ? 's' : ''}
+          <p className="text-[11px] font-semibold tracking-[0.08em] uppercase text-muted-foreground mb-3">
+            {photos.length} foto{photos.length !== 1 ? 's' : ''} seleccionada{photos.length !== 1 ? 's' : ''}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 }}>
-            {previews.map((p, i) => (
-              <div key={p.url} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2.5">
+            {photos.map((p, i) => (
+              <div key={p.url} className="relative aspect-square rounded-lg overflow-hidden border border-border">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={p.url} alt="" className="w-full h-full object-cover" />
                 <button
-                  onClick={(e) => { e.stopPropagation(); removePreview(i); }}
-                  style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removePhoto(i); }}
+                  className="absolute top-1 right-1 w-[22px] h-[22px] rounded-full bg-black/60 text-white border-none cursor-pointer text-[12px] flex items-center justify-center"
                 >
                   ✕
                 </button>
                 {i === 0 && (
-                  <span style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', background: 'var(--accent)', color: '#000', padding: '2px 6px', borderRadius: 4 }}>
+                  <span className="absolute bottom-1 left-1 text-[9px] font-bold uppercase tracking-[0.06em] bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
                     Principal
                   </span>
                 )}
@@ -433,80 +401,195 @@ function PhotoUploadStep({ listingId }: { listingId: string }) {
         </div>
       )}
 
-      {/* Upload feedback */}
-      {upload.isSuccess && (
-        <p style={{ fontSize: 13, color: 'var(--color-success)', textAlign: 'center' }}>
-          ✓ {uploadedCount} foto{uploadedCount !== 1 ? 's' : ''} subida{uploadedCount !== 1 ? 's' : ''}. Redirigiendo…
-        </p>
-      )}
-      {upload.error && (
-        <p style={{ fontSize: 13, color: 'var(--color-error)' }}>{(upload.error as Error).message}</p>
-      )}
-
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button
-          className="btn btn-primary"
-          style={{ flex: 1, padding: '14px', fontSize: 14 }}
-          disabled={upload.isPending || upload.isSuccess}
-          onClick={handleUpload}
-        >
-          {upload.isPending
-            ? 'Subiendo fotos…'
-            : previews.length === 0
-            ? 'Continuar sin fotos →'
-            : `Subir ${previews.length} foto${previews.length !== 1 ? 's' : ''} →`}
-        </button>
-      </div>
+      <Button onClick={onNext} className="w-full h-11 text-[14px]">
+        <span className="inline-flex items-center gap-2">
+        {photos.length === 0 ? 'Omitir fotos' : `Continuar con ${photos.length} foto${photos.length !== 1 ? 's' : ''}`}
+        <ArrowRight size={15} />
+      </span>
+      </Button>
     </div>
   );
 }
 
-// ─── Main component with steps ────────────────────────────────────────────────
+// ─── Step 3: Publicación ──────────────────────────────────────────────────────
+
+function PublicationStep({
+  details,
+  photos,
+}: {
+  details: DetailsData;
+  photos: PhotoEntry[];
+}) {
+  const router = useRouter();
+  const createListing = useCreateListing();
+  const [status, setStatus] = useState<'active' | 'draft'>('active');
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const upload = useUploadPhotos(createdId ?? '');
+
+  useEffect(() => {
+    if (!createdId) return;
+    if (photos.length === 0) {
+      router.push(`/listings/${createdId}`);
+      return;
+    }
+    upload.mutate(photos.map((p) => p.file), {
+      onSuccess: () => router.push(`/listings/${createdId}`),
+      onError: () => router.push(`/listings/${createdId}`),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createdId]);
+
+  const isUploading = upload.isPending;
+  const isPending = createListing.isPending || isUploading;
+
+  const handlePublish = () => {
+    createListing.mutate(
+      { ...details, status } as Record<string, unknown>,
+      { onSuccess: (listing) => setCreatedId(listing.id) },
+    );
+  };
+
+  if (createdId) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-10 text-center">
+        <div
+          className="w-12 h-12 rounded-full border-3 border-[#6ECC96] border-t-transparent"
+          style={{ animation: 'spin 0.8s linear infinite', borderWidth: 3 }}
+        />
+        <p className="text-[14px] font-medium text-foreground">
+          {isUploading ? 'Subiendo fotos…' : 'Publicando…'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-7 flex flex-col gap-5">
+        <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary">
+          Publicación
+        </p>
+
+        <div className="flex flex-col gap-2.5">
+          {(
+            [
+              { value: 'active', label: 'Activo', sub: 'Visible de inmediato en el marketplace' },
+              { value: 'draft', label: 'Borrador', sub: 'Guardado, no visible públicamente' },
+            ] as const
+          ).map((s) => (
+            <label
+              key={s.value}
+              className={cn(
+                'flex items-start gap-3 cursor-pointer px-4 py-3.5 rounded-lg border transition-all duration-150',
+                status === s.value
+                  ? 'border-[var(--accent-dim)] bg-[var(--bg-elevated)]'
+                  : 'border-[var(--border-light)] bg-transparent',
+              )}
+            >
+              <input
+                type="radio"
+                name="status"
+                value={s.value}
+                checked={status === s.value}
+                onChange={() => setStatus(s.value)}
+                className="w-4 h-4 mt-0.5 accent-[var(--accent)]"
+              />
+              <div>
+                <p className="text-[13px] font-medium text-foreground">{s.label}</p>
+                <p className="text-[11px] text-muted-foreground">{s.sub}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {photos.length > 0 && (
+          <p className="text-[12px] text-muted-foreground">
+            Se subirán {photos.length} foto{photos.length !== 1 ? 's' : ''} al publicar.
+          </p>
+        )}
+
+        {createListing.error && (
+          <div className="px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-lg text-[13px] text-destructive">
+            {(createListing.error as Error).message}
+          </div>
+        )}
+
+        <Button
+          onClick={handlePublish}
+          disabled={isPending}
+          className="w-full h-12 text-[14px]"
+        >
+          {isPending ? 'Publicando…' : 'Publicar anuncio'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+const STEPS = [
+  { n: 1, label: 'Detalles' },
+  { n: 2, label: 'Fotos' },
+  { n: 3, label: 'Publicación' },
+];
 
 export default function NewListingForm() {
-  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [details, setDetails] = useState<DetailsData | null>(null);
+  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
   return (
     <div>
       {/* Step indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 40 }}>
-        {[
-          { n: 1, label: 'Detalles del anuncio' },
-          { n: 2, label: 'Fotos' },
-        ].map((step, i) => {
-          const done = createdId !== null && step.n === 1;
-          const active = (step.n === 1 && !createdId) || (step.n === 2 && createdId);
+      <div className="flex items-center gap-0 mb-10">
+        {STEPS.map((s, i) => {
+          const done = step > s.n;
+          const active = step === s.n;
           return (
-            <div key={step.n} style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: done ? 'var(--color-success)' : active ? 'var(--accent)' : 'var(--bg-elevated)',
-                  color: done || active ? '#000' : 'var(--text-muted)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: done ? 16 : 13, fontWeight: 700, flexShrink: 0,
-                  border: `2px solid ${done ? 'var(--color-success)' : active ? 'var(--accent)' : 'var(--border)'}`,
-                  transition: 'all 0.3s',
-                }}>
-                  {done ? '✓' : step.n}
+            <div key={s.n} className="flex items-center">
+              <div className="flex flex-col items-center gap-1.5">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+                  style={{
+                    background: done ? '#6ECC96' : active ? 'var(--accent)' : 'var(--bg-elevated)',
+                    color: done || active ? '#000' : 'var(--text-muted)',
+                    fontSize: done ? 16 : 13,
+                    fontWeight: 700,
+                    border: `2px solid ${done ? '#6ECC96' : active ? 'var(--accent)' : 'var(--border)'}`,
+                  }}
+                >
+                  {done ? '✓' : s.n}
                 </div>
-                <span style={{ fontSize: 11, color: active ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>
-                  {step.label}
+                <span
+                  className="text-[11px] whitespace-nowrap"
+                  style={{
+                    color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                    fontWeight: active ? 600 : 400,
+                  }}
+                >
+                  {s.label}
                 </span>
               </div>
-              {i < 1 && (
-                <div style={{ width: 64, height: 2, background: done ? 'var(--color-success)' : 'var(--border)', margin: '0 8px', marginBottom: 22, transition: 'background 0.3s', flexShrink: 0 }} />
+              {i < STEPS.length - 1 && (
+                <div
+                  className="w-16 h-0.5 mx-2 mb-[22px] shrink-0 transition-colors duration-300"
+                  style={{ background: done ? '#6ECC96' : 'var(--border)' }}
+                />
               )}
             </div>
           );
         })}
       </div>
 
-      {createdId ? (
-        <PhotoUploadStep listingId={createdId} />
-      ) : (
-        <ListingDetailsStep onCreated={setCreatedId} />
+      {step === 1 && (
+        <DetailsStep onNext={(data) => { setDetails(data); setStep(2); }} />
+      )}
+      {step === 2 && (
+        <PhotoStep photos={photos} setPhotos={setPhotos} onNext={() => setStep(3)} />
+      )}
+      {step === 3 && details && (
+        <PublicationStep details={details} photos={photos} />
       )}
     </div>
   );

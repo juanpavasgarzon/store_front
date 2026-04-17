@@ -1,49 +1,44 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMyFavorites, useRemoveFavorite } from '../lib/hooks';
-import { useProfile } from '../lib/hooks';
-import type { FavoriteResponse } from '../lib/types';
-import { Heart, HeartOff } from 'lucide-react';
+import { useMyFavorites, useRemoveFavorite, useProfile } from '../lib/hooks';
+import type { FavoriteResponse, ListingResponse } from '../lib/types';
+import { Heart, HeartOff, ArrowRight } from 'lucide-react';
 import ListingCard from '../components/ListingCard';
 import EmptyState from '../components/EmptyState';
-import type { ListingResponse } from '../lib/types';
+import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-// ─── Card wrapper: reuses ListingCard design, adds floating remove button ─────
 function FavoriteCard({ fav }: { fav: FavoriteResponse }) {
   const remove = useRemoveFavorite(fav.listingId);
 
-  // Fallback when listing data isn't included in the API response
   if (!fav.listing) {
     return (
-      <div style={{
-        background: 'var(--bg-surface)', border: '1px solid var(--border)',
-        borderRadius: 12, padding: '20px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
-      }}>
-        <Link href={`/listings/${fav.listingId}`} style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
-          Ver anuncio →
-        </Link>
-        <button
-          className="btn btn-ghost"
-          style={{ fontSize: 11, color: '#CC6E6E', display: 'flex', alignItems: 'center', gap: 5 }}
+      <div className="bg-card border border-border rounded-xl px-5 py-4 flex justify-between items-center gap-3">
+        <a
+          href={`/listings/${fav.listingId}`}
+          className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-primary text-[13px]')}
+        >
+          Ver anuncio <ArrowRight size={13} />
+        </a>
+        <Button
+          variant="ghost"
+          size="sm"
           disabled={remove.isPending}
           onClick={() => remove.mutate()}
+          className="text-[11px] text-[#CC6E6E] hover:text-[#CC6E6E] flex items-center gap-1"
         >
           <HeartOff size={13} /> {remove.isPending ? 'Eliminando…' : 'Eliminar'}
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Reuse exact same ListingCard design */}
+    <div className="relative">
       <ListingCard listing={fav.listing as ListingResponse} />
-
-      {/* Floating remove button — absolutely over the card photo area */}
       <button
         disabled={remove.isPending}
         onClick={(e) => {
@@ -52,29 +47,17 @@ function FavoriteCard({ fav }: { fav: FavoriteResponse }) {
           remove.mutate();
         }}
         title="Quitar de favoritos"
+        className={cn(
+          'absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full flex items-center justify-center',
+          'text-white border-none cursor-pointer transition-transform hover:scale-110',
+        )}
         style={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 10,
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
           background: remove.isPending
             ? 'rgba(0,0,0,0.4)'
             : 'color-mix(in srgb, #CC6E6E 90%, transparent)',
           backdropFilter: 'blur(6px)',
-          border: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: remove.isPending ? 'default' : 'pointer',
-          color: '#fff',
-          transition: 'opacity 0.15s, transform 0.15s',
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.1)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
       >
         <Heart size={14} fill="currentColor" />
       </button>
@@ -100,8 +83,8 @@ export default function FavoritesClient() {
 
   if (profileLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: 'var(--text-muted)' }}>
-        <p>Cargando…</p>
+      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+        <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem' }}>Cargando…</p>
       </div>
     );
   }
@@ -111,17 +94,16 @@ export default function FavoritesClient() {
   const favs = data?.data ?? [];
 
   return (
-    <div className="container-wide" style={{ padding: '48px 24px', flex: 1 }}>
-      {/* Header */}
-      <div style={{ marginBottom: 40 }}>
-        <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8, fontWeight: 600 }}>
+    <div className="container-wide py-12 pb-20 flex-1 px-6">
+      <div className="mb-10">
+        <p className="text-[11px] tracking-[0.14em] uppercase text-primary mb-2 font-semibold">
           FAVORITOS
         </p>
-        <h1 className="page-heading" style={{ fontFamily: 'var(--font-display)', fontSize: '2.6rem', fontWeight: 300, marginBottom: 12 }}>
+        <h1 className="font-light mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)' }}>
           Mis favoritos
         </h1>
         {!isLoading && (
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+          <p className="text-muted-foreground text-[14px]">
             {favs.length === 0
               ? 'Todavía no has guardado ningún anuncio'
               : `${favs.length} anuncio${favs.length !== 1 ? 's' : ''} guardado${favs.length !== 1 ? 's' : ''}`}
@@ -129,15 +111,14 @@ export default function FavoritesClient() {
         )}
       </div>
 
-      {/* Grid */}
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} style={{ height: 340, background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border)', opacity: 0.4, animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div key={i} className="h-[340px] bg-card rounded-xl border border-border opacity-40" />
           ))}
         </div>
       ) : favs.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
           {favs.map((fav) => (
             <FavoriteCard key={fav.id} fav={fav} />
           ))}

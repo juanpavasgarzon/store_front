@@ -4,6 +4,9 @@ import ListingCard from '../components/ListingCard';
 import EmptyState from '../components/EmptyState';
 import Navbar from '../components/Navbar';
 import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -43,27 +46,26 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <>
       <Navbar />
-      <div className="container-wide" style={{ padding: '56px 24px 80px', flex: 1 }}>
+      <div className="container-wide py-14 pb-20 flex-1 px-6">
         {/* Header + search bar */}
-        <div style={{ marginBottom: 40, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8, fontWeight: 600 }}>
-            {'Búsqueda'}
+        <div className="mb-10 text-center">
+          <p className="text-[11px] tracking-[0.14em] uppercase text-primary mb-2 font-semibold">
+            Búsqueda
           </p>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 300, marginBottom: 24 }}>
+          <h1 className="font-light mb-6" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)' }}>
             {q ? `"${q}"` : 'Encuentra cualquier cosa'}
           </h1>
-          <form action="" method="GET" style={{ maxWidth: 560, margin: '0 auto', width: '100%' }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
+          <form action="" method="GET" className="max-w-[560px] mx-auto w-full">
+            <div className="flex gap-2">
+              <Input
                 name="q"
                 type="text"
                 defaultValue={q}
-                placeholder={'Buscar anuncios, categorías…'}
-                className="field"
-                style={{ flex: 1, fontSize: 15 }}
+                placeholder="Buscar anuncios, categorías…"
+                className="flex-1 text-[15px] h-11"
                 autoFocus={!q}
               />
-              <button type="submit" className="btn btn-primary">{'Buscar'}</button>
+              <Button type="submit" className="h-11 px-5">Buscar</Button>
             </div>
           </form>
         </div>
@@ -74,23 +76,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {total === 0 ? (
               <EmptyState
                 icon={<Search size={32} />}
-                title={'Sin resultados para "' + q + '"'}
-                subtitle={'Prueba con otras palabras o explora categorías'}
+                title={`Sin resultados para "${q}"`}
+                subtitle="Prueba con otras palabras o explora categorías"
                 action={{ label: 'Ver todos los anuncios', href: '/listings' }}
               />
             ) : (
               <div>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32 }}>
-                  {total === 1 ? total + ' resultado' : total + ' resultados'}
+                <p className="text-[13px] text-muted-foreground mb-8">
+                  {total === 1 ? `${total} resultado` : `${total} resultados`}
                 </p>
 
-                {/* Listing cards grid */}
                 {listingResults && listingResults.length > 0 && (
-                  <section style={{ marginBottom: 48 }}>
-                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 400, marginBottom: 20, color: 'var(--text-muted)' }}>
-                      {'Anuncios (' + listingResults.length + ')'}
+                  <section className="mb-12">
+                    <h2 className="font-light mb-5" style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-muted)' }}>
+                      Anuncios ({listingResults.length})
                     </h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
                       {listingResults.map((listing, i) => (
                         <ListingCard
                           key={listing.id}
@@ -103,27 +104,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   </section>
                 )}
 
-                {/* Category pills */}
                 {categoryResults.length > 0 && (
                   <section>
-                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 400, marginBottom: 16, color: 'var(--text-muted)' }}>
-                      {'Categorías (' + categoryResults.length + ')'}
+                    <h2 className="font-light mb-4" style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-muted)' }}>
+                      Categorías ({categoryResults.length})
                     </h2>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    <div className="flex flex-wrap gap-2">
                       {categoryResults.map((item) => (
                         <Link
                           key={item.id}
                           href={`/listings?categoryId=${item.id}`}
-                          style={{
-                            padding: '10px 18px',
-                            background: 'var(--bg-surface)',
-                            border: '1px solid var(--border-accent)',
-                            borderRadius: 999,
-                            textDecoration: 'none',
-                            fontSize: 13,
-                            color: 'var(--accent)',
-                            transition: 'all 0.2s',
-                          }}
+                          className={cn(
+                            'px-[18px] py-2.5 rounded-full text-[13px] no-underline border transition-all duration-150',
+                            'bg-card border-[var(--border-accent)] text-primary hover:bg-[var(--bg-elevated)]',
+                          )}
                         >
                           {item.title}
                         </Link>
@@ -139,8 +133,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {!q && (
           <EmptyState
             icon={<Search size={32} />}
-            title={'Escribe un término para encontrar anuncios y categorías.'}
-            action={{ label: 'Ver todos los anuncios →', href: '/listings' }}
+            title="Escribe un término para encontrar anuncios y categorías."
+            action={{ label: 'Ver todos los anuncios', href: '/listings' }}
           />
         )}
       </div>
