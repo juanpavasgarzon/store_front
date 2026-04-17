@@ -101,8 +101,8 @@ export default function ProfileClient() {
   };
 
   const infoRows = [
-    { icon: <Mail size={13} />, label: 'Correo electrónico', value: profile.email },
     { icon: <Hash size={13} />, label: 'ID de cuenta', value: profile.id },
+    { icon: <Mail size={13} />, label: 'Correo electrónico', value: profile.email },
     ...(profile.phone ? [{ icon: <Phone size={13} />, label: 'Teléfono', value: profile.phone }] : []),
     ...(profile.city ? [{ icon: <MapPin size={13} />, label: 'Ciudad', value: profile.city }] : []),
   ];
@@ -277,7 +277,7 @@ export default function ProfileClient() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12">
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-x-12">
                   {infoRows.map(({ icon, label, value }, idx) => (
                     <div key={label}>
                       <div className="py-4">

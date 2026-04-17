@@ -192,24 +192,37 @@ export default function ListingsClient() {
             <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-2.5">
               Precio
             </p>
-            <div className="flex gap-2 items-center">
-              <Input
-                type="number"
-                min={0}
-                value={minPriceInput}
-                onChange={(e) => setMinPriceInput(e.target.value)}
-                placeholder="Mín"
-                className="text-[13px] h-9 w-full"
-              />
-              <span className="text-muted-foreground text-[12px] shrink-0">–</span>
-              <Input
-                type="number"
-                min={0}
-                value={maxPriceInput}
-                onChange={(e) => setMaxPriceInput(e.target.value)}
-                placeholder="Máx"
-                className="text-[13px] h-9 w-full"
-              />
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <Input
+                  type="number"
+                  min={0}
+                  value={minPriceInput}
+                  onChange={(e) => setMinPriceInput(e.target.value)}
+                  placeholder="Mínimo"
+                  className="text-[13px] h-9 w-full"
+                />
+                {minPriceInput && Number(minPriceInput) > 0 && (
+                  <span className="text-[11px] text-muted-foreground pl-1">
+                    $ {Number(minPriceInput).toLocaleString('es-CO')}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <Input
+                  type="number"
+                  min={0}
+                  value={maxPriceInput}
+                  onChange={(e) => setMaxPriceInput(e.target.value)}
+                  placeholder="Máximo"
+                  className="text-[13px] h-9 w-full"
+                />
+                {maxPriceInput && Number(maxPriceInput) > 0 && (
+                  <span className="text-[11px] text-muted-foreground pl-1">
+                    $ {Number(maxPriceInput).toLocaleString('es-CO')}
+                  </span>
+                )}
+              </div>
             </div>
             {(minPriceFromUrl || maxPriceFromUrl) && (
               <button
