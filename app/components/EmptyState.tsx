@@ -10,7 +10,7 @@ interface EmptyStateProps {
   subtitle?: string;
   action?: {
     label: string;
-    href: string;
+    href?: string;
     onClick?: () => void;
   };
 }
@@ -40,7 +40,7 @@ export default function EmptyState({ icon, title, subtitle, action }: EmptyState
       </div>
 
       {action && (
-        action.onClick ? (
+        action.onClick || !action.href ? (
           <button onClick={action.onClick} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-1')}>
             {action.label}
           </button>

@@ -24,7 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={cn("h-full", "font-sans", geist.variable)} suppressHydrationWarning data-scroll-behavior="smooth">
-      <head>
+      <head />
+      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
         <Script id="theme-init" strategy="beforeInteractive">{`
           (function() {
             try {
@@ -37,8 +38,6 @@ export default function RootLayout({
             }
           })();
         `}</Script>
-      </head>
-      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </QueryProvider>

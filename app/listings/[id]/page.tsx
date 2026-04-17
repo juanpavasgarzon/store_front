@@ -51,7 +51,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
   const statusLabels: Record<string, string> = {
     active: 'Disponible', reserved: 'Reservado', sold: 'Vendido',
-    draft: 'Borrador', expired: 'Expirado', suspended: 'Suspendido',
+    draft: 'Borrador', expired: 'Expirado', suspended: 'Suspendido', deleted: 'Eliminado',
   };
   const statusLabel = statusLabels[listing.status] ?? listing.status;
 

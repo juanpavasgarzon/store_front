@@ -12,6 +12,7 @@ export interface ReportResponse {
   id: string;
   userId: string;
   listingId: string;
+  listing: { id: string; title: string } | null;
   reason: ReportReason;
   details: string | null;
   status: ReportStatus;

@@ -31,6 +31,7 @@ const statusBadgeClass: Record<string, string> = {
   draft:     'text-[#6E8CB8] border-[#6E8CB8]/30 bg-[color-mix(in_srgb,#6E8CB8_12%,transparent)]',
   expired:   'text-[#8A8A8A] border-[#8A8A8A]/30 bg-[color-mix(in_srgb,#8A8A8A_12%,transparent)]',
   suspended: 'text-[#A868A0] border-[#A868A0]/30 bg-[color-mix(in_srgb,#A868A0_12%,transparent)]',
+  deleted:   'text-[#CC5252] border-[#CC5252]/30 bg-[color-mix(in_srgb,#CC5252_12%,transparent)]',
 };
 
 const statusLabels: Record<string, string> = {
@@ -40,6 +41,7 @@ const statusLabels: Record<string, string> = {
   draft: 'Borrador',
   expired: 'Expirado',
   suspended: 'Suspendido',
+  deleted:   'Eliminado',
 };
 
 function timeAgo(dateStr: string): string {
