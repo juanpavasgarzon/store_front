@@ -277,7 +277,7 @@ export default function ProfileClient() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-1 gap-x-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12">
                   {infoRows.map(({ icon, label, value }, idx) => (
                     <div key={label}>
                       <div className="py-4">
