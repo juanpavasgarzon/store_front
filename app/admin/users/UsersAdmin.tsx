@@ -73,7 +73,7 @@ function UserRow({
                 key={r}
                 disabled={isSelf || active}
                 onClick={() => onChangeRole(user.id, user.name, r)}
-                className="px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-[0.05em] uppercase transition-all duration-150 border disabled:cursor-default"
+                className="h-9 px-2.5 rounded-md text-[11px] font-semibold tracking-[0.05em] uppercase transition-all duration-150 border disabled:cursor-default"
                 style={{
                   color: active ? s.text : 'var(--text-muted)',
                   background: active ? s.bg : 'transparent',

@@ -55,7 +55,7 @@ export default async function HomePage() {
           <div style={{ maxWidth: 680 }}>
             <p className="animate-fade-up" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ display: 'inline-block', width: 24, height: 1, background: 'var(--accent)' }} />
-              Mercado Premium
+              Todo lo que estas buscando
             </p>
 
             <h1 className="animate-fade-up delay-100 hero-heading" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(3rem, 7vw, 5.5rem)', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 28 }}>

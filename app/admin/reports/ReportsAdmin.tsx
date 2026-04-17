@@ -99,13 +99,13 @@ function ReportCard({ report }: { report: ReportResponse }) {
             href={`/listings/${report.listingId}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(buttonVariants({ variant: 'outline', size: 'xs' }))}
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
           >
             <ExternalLink size={11} /> Ver anuncio
           </Link>
           <Button
             variant="ghost"
-            size="xs"
+            size="sm"
             onClick={() => setOpen(!open)}
             className={cn('text-[11px]', open ? 'text-primary' : 'text-muted-foreground')}
           >

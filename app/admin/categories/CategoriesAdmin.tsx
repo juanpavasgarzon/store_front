@@ -439,7 +439,7 @@ function CategoryRow({ category, token }: { category: CategoryResponse; token: s
           <div className="flex gap-1.5 items-center shrink-0">
             <Button
               variant="ghost"
-              size="xs"
+              size="sm"
               onClick={() => setAttributesExpanded(!attributesExpanded)}
               className="flex items-center gap-1.5"
             >
@@ -449,7 +449,7 @@ function CategoryRow({ category, token }: { category: CategoryResponse; token: s
             </Button>
             <Button
               variant="ghost"
-              size="xs"
+              size="sm"
               onClick={() => setEditOpen(true)}
               className="flex items-center gap-1.5"
             >

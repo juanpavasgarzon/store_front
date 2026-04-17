@@ -55,7 +55,7 @@ function MetricCard({ icon, value, label, sub, accent, action }: {
   label: string;
   sub?: { text: string; color?: string }[];
   accent?: string;
-  action?: { label: string; href: string };
+  action?: { label: string; href?: string; onClick?: () => void };
 }) {
   return (
     <Card className="relative overflow-hidden flex flex-col min-h-[180px] w-full flex-[1_1_160px] sm:flex-[1_1_220px] max-w-[300px]">
@@ -75,8 +75,9 @@ function MetricCard({ icon, value, label, sub, accent, action }: {
         <p className="text-[12px] font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-4">
           {label}
         </p>
+        <div className="flex-1" />
         {sub && sub.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-auto">
+          <div className="flex flex-wrap gap-2 mb-3">
             {sub.map((s, i) => (
               <Badge
                 key={i}
@@ -90,13 +91,23 @@ function MetricCard({ icon, value, label, sub, accent, action }: {
           </div>
         )}
         {action && (
-          <Link
-            href={action.href}
-            className="mt-5 text-[12px] font-medium tracking-[0.04em] no-underline inline-flex items-center gap-1"
-            style={{ color: accent ?? 'var(--accent)' }}
-          >
-            {action.label} <ArrowRight size={13} />
-          </Link>
+          action.onClick ? (
+            <button
+              onClick={action.onClick}
+              className="text-[12px] font-medium tracking-[0.04em] no-underline inline-flex items-center gap-1 cursor-pointer"
+              style={{ color: '#C87D38' }}
+            >
+              {action.label} <ArrowRight size={13} />
+            </button>
+          ) : (
+            <Link
+              href={action.href!}
+              className="text-[12px] font-medium tracking-[0.04em] no-underline inline-flex items-center gap-1"
+              style={{ color: '#C87D38' }}
+            >
+              {action.label} <ArrowRight size={13} />
+            </Link>
+          )
         )}
       </CardContent>
     </Card>
@@ -155,22 +166,22 @@ function ListingStatsRow({ listing }: { listing: ListingResponse }) {
         </div>
 
         <div className="flex gap-1.5 items-center shrink-0">
-          <Link href={`/listings/${listing.id}`} className={cn(buttonVariants({ variant: 'outline', size: 'xs' }))}>
+          <Link href={`/listings/${listing.id}`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
             <ExternalLink size={12} /> Ver
           </Link>
           <Button
             variant={expanded ? 'secondary' : 'outline'}
-            size="xs"
+            size="sm"
             onClick={() => setExpanded(!expanded)}
             className="flex items-center gap-1"
           >
             <BarChart2 size={12} />
-            Stats
+            Analíticas
             {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
           </Button>
           <Button
             variant="ghost"
-            size="xs"
+            size="sm"
             onClick={() => {
               sileo.action({
                 title: '¿Eliminar este anuncio?',
@@ -236,7 +247,7 @@ function MessageRow({ cr }: { cr: ContactRequestResponse }) {
           </div>
           <div className="flex gap-2 items-center shrink-0">
             <span className="text-[11px] text-muted-foreground">{formatDate(cr.createdAt)}</span>
-            <Link href={`/listings/${cr.listingId}`} className={cn(buttonVariants({ variant: 'outline', size: 'xs' }))}>
+            <Link href={`/listings/${cr.listingId}`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
               <ExternalLink size={12} /> Ver anuncio
             </Link>
           </div>
@@ -380,7 +391,7 @@ export default function DashboardClient() {
                 { text: `${activeListings} activos`, color: '#6ECC96' },
                 ...(draftListings > 0 ? [{ text: `${draftListings} borradores`, color: 'var(--text-muted)' }] : []),
               ]}
-              action={{ label: 'Mis anuncios', href: '#' }}
+              action={{ label: 'Ver anuncios', onClick: () => switchTab('listings') }}
             />
             <MetricCard
               icon={<MessageSquare size={22} />}
@@ -388,6 +399,7 @@ export default function DashboardClient() {
               label={'Mensajes recibidos'}
               accent="var(--text-secondary)"
               sub={receivedContactReqs.length > 0 ? [{ text: `${receivedContactReqs.length} mensajes`, color: 'var(--text-muted)' }] : []}
+              action={{ label: 'Ver mensajes', onClick: () => switchTab('messages') }}
             />
             <MetricCard
               icon={<Heart size={22} />}
@@ -395,6 +407,7 @@ export default function DashboardClient() {
               label={'Guardados'}
               accent="#CC6E6E"
               sub={favs.length > 0 ? [{ text: 'Anuncios guardados', color: 'var(--text-muted)' }] : []}
+              action={{ label: 'Ver guardados', href: '/favorites' }}
             />
           </div>
 
