@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import ProfileClient from './ProfileClient';
 
 export const metadata: Metadata = { title: 'Mi perfil' };
@@ -9,6 +10,7 @@ export default function ProfilePage() {
     <>
       <Navbar />
       <ProfileClient />
+      <Footer />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import ListingsClient from './ListingsClient';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
@@ -12,6 +13,7 @@ export default function ListingsPage() {
       <Suspense>
         <ListingsClient />
       </Suspense>
+      <Footer />
     </>
   );
 }

@@ -3,6 +3,7 @@ import { listings, search } from '../lib/api';
 import ListingCard from '../components/ListingCard';
 import EmptyState from '../components/EmptyState';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -138,6 +139,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           />
         )}
       </div>
+      <Footer />
     </>
   );
 }

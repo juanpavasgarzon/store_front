@@ -591,3 +591,60 @@ h1, h2, h3, .heading {
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* ─── Legal pages typography ─────────────────────────────────────────────── */
+.legal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.legal-body section h2 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-body section p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: 10px;
+}
+
+.legal-body section p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-body section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legal-body section ul li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  padding-left: 16px;
+  position: relative;
+}
+
+.legal-body section ul li::before {
+  content: '–';
+  position: absolute;
+  left: 0;
+  color: var(--accent-dim);
+}
+
+.legal-body strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}

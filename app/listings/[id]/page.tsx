@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { listings } from '../../lib/api';
 import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
 import PhotoCarousel from '../../components/PhotoCarousel';
 import ListingMapClient from '../../components/ListingMapClient';
 import ContactButton from './ContactButton';
@@ -220,6 +221,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
           </aside>
         </div>
       </div>
+      <Footer />
     </>
   );
 }
