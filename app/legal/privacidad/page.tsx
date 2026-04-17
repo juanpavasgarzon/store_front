@@ -29,7 +29,7 @@ export default function PrivacidadPage() {
             <section>
               <h2>1. Responsable del tratamiento</h2>
               <p>
-                <strong>Tienda</strong> es responsable del tratamiento de los datos personales que los usuarios proporcionan al utilizar la Plataforma. Nos comprometemos a proteger tu privacidad y a tratar tus datos conforme a la <strong>Ley 1581 de 2012</strong> (Ley de Protección de Datos Personales de Colombia) y sus decretos reglamentarios.
+                <strong>Pavas Marketplace</strong> es responsable del tratamiento de los datos personales que los usuarios proporcionan al utilizar la Plataforma. Nos comprometemos a proteger tu privacidad y a tratar tus datos conforme a la <strong>Ley 1581 de 2012</strong> (Ley de Protección de Datos Personales de Colombia) y sus decretos reglamentarios.
               </p>
             </section>
 
@@ -130,7 +130,7 @@ export default function PrivacidadPage() {
             <section>
               <h2>11. Menores de edad</h2>
               <p>
-                Tienda no está dirigida a menores de 18 años. Si detectamos que un menor ha proporcionado datos sin el consentimiento de sus tutores legales, procederemos a eliminar dicha información de forma inmediata.
+                Pavas Marketplace no está dirigida a menores de 18 años. Si detectamos que un menor ha proporcionado datos sin el consentimiento de sus tutores legales, procederemos a eliminar dicha información de forma inmediata.
               </p>
             </section>
 

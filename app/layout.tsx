@@ -10,8 +10,8 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: {
-    default: "Pavas Store — Premium Marketplace",
-    template: "%s | Pavas Store",
+    default: "Pavas Marketplace",
+    template: "%s | Pavas Marketplace",
   },
   description:
     "Anuncios seleccionados en todas las categorías. Descubre artículos únicos, conecta con vendedores y compra con confianza.",

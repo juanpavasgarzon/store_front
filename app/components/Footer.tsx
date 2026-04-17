@@ -7,7 +7,7 @@ export default function Footer() {
         <div style={{ display: 'flex', gap: 48, flexWrap: 'wrap', marginBottom: 40, justifyContent: 'space-between' }}>
           <div style={{ maxWidth: 320 }}>
             <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 12 }}>
-              <span style={{ color: 'var(--accent)' }}>◆</span> Tienda
+              <span style={{ color: 'var(--accent)' }}>◆</span> Pavas Marketplace
             </p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>
               Plataforma de compra y venta segura. Conectamos compradores y vendedores con transparencia, confianza y facilidad.
@@ -38,7 +38,7 @@ export default function Footer() {
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            © {new Date().getFullYear()} Tienda. Todos los derechos reservados.
+            © {new Date().getFullYear()} Pavas Marketplace. Todos los derechos reservados.
           </p>
           <div style={{ display: 'flex', gap: 20 }}>
             <Link href="/legal/terminos" style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'none' }}>Términos</Link>

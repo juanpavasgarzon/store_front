@@ -78,7 +78,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
           }}
         >
           <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', color: 'var(--text-muted, #666)' }}>
-            <span style={{ color: 'var(--accent, #C87D38)' }}>◆</span>{' '}Tienda
+            <span style={{ color: 'var(--accent, #C87D38)' }}>◆</span>{' '}Pavas Marketplace
           </p>
           <div style={{
             width: 32, height: 32,

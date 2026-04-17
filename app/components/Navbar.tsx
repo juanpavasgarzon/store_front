@@ -85,7 +85,7 @@ export default function Navbar() {
             style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 500, color: 'var(--text-primary)' }}
           >
             <span className="text-primary">◆</span>
-            <span>Tienda</span>
+            <span>Pavas Marketplace</span>
           </Link>
 
           {/* Desktop nav */}

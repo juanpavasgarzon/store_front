@@ -19,7 +19,7 @@ export default async function LoginPage() {
             className="no-underline tracking-[-0.02em]"
             style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 400, color: 'var(--text-primary)' }}
           >
-            <span className="text-primary">◆</span> Tienda
+            <span className="text-primary">◆</span> Pavas Marketplace
           </Link>
           <p className="text-[11px] text-muted-foreground mt-1.5 tracking-[0.1em] uppercase">
             Inicia sesión en tu cuenta
