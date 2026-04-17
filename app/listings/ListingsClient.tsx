@@ -1,11 +1,14 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { usePublicListings, usePublicCategories } from '../lib/hooks';
 import { useListingsFilters } from './hooks/useListingsFilters';
 import ListingCard from '../components/ListingCard';
 import EmptyState from '../components/EmptyState';
 import { LayoutGrid, ArrowLeft, ArrowRight, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -17,7 +20,20 @@ const SORT_OPTIONS = [
 ] as const;
 
 export default function ListingsClient() {
+  const router = useRouter();
   const filters = useListingsFilters();
+
+  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([]);
+  const filterKeyRef = useRef(`${filters.categoryId}|${filters.qFromUrl}|${filters.sortFromUrl}|${filters.minPriceNum}|${filters.maxPriceNum}`);
+
+  useEffect(() => {
+    const newKey = `${filters.categoryId}|${filters.qFromUrl}|${filters.sortFromUrl}|${filters.minPriceNum}|${filters.maxPriceNum}`;
+    if (newKey !== filterKeyRef.current) {
+      filterKeyRef.current = newKey;
+      setCursorHistory([]);
+    }
+  }, [filters.categoryId, filters.qFromUrl, filters.sortFromUrl, filters.minPriceNum, filters.maxPriceNum]);
+
   const { data, isFetching } = usePublicListings({
     cursor: filters.cursor,
     q: filters.qFromUrl,
@@ -39,14 +55,28 @@ export default function ListingsClient() {
     ? `Resultados para "${filters.qFromUrl}"`
     : 'Todos los anuncios';
 
-  const buildHref = (extraCursor?: string | null) => {
-    const p = filters.buildParams({ cursor: extraCursor ?? undefined });
+  const buildUrl = (cursor?: string) => {
+    const p = filters.buildParams({ cursor });
     const qs = p.toString();
     return `/listings${qs ? `?${qs}` : ''}`;
   };
 
-  const prevHref = meta?.hasPreviousPage && meta.previousCursor ? buildHref(meta.previousCursor) : null;
-  const nextHref = meta?.hasNextPage && meta.nextCursor ? buildHref(meta.nextCursor) : null;
+  const hasNext = !!meta?.hasNextPage && !!meta.nextCursor;
+  const hasPrev = cursorHistory.length > 0;
+
+  const goNext = () => {
+    if (!meta?.nextCursor) return;
+    setCursorHistory((h) => [...h, filters.cursor]);
+    router.push(buildUrl(meta.nextCursor));
+  };
+
+  const goPrev = () => {
+    setCursorHistory((h) => {
+      const prev = h[h.length - 1];
+      router.push(buildUrl(prev));
+      return h.slice(0, -1);
+    });
+  };
 
   return (
     <div className="container-wide py-12 flex-1 px-6">
@@ -200,32 +230,24 @@ export default function ListingsClient() {
                 ))}
               </div>
 
-              {(prevHref || nextHref) && (
+              {(hasPrev || hasNext) && (
                 <div className="flex items-center justify-center gap-3">
-                  <Link
-                    href={prevHref ?? '#'}
-                    aria-disabled={!prevHref}
-                    onClick={!prevHref ? (e: React.MouseEvent) => e.preventDefault() : undefined}
-                    className={cn(
-                      buttonVariants({ variant: 'outline' }),
-                      'inline-flex items-center gap-1.5',
-                      !prevHref && 'pointer-events-none opacity-40',
-                    )}
+                  <Button
+                    variant="outline"
+                    onClick={goPrev}
+                    disabled={!hasPrev || isFetching}
+                    className={cn('inline-flex items-center gap-1.5', !hasPrev && 'opacity-40')}
                   >
                     <ArrowLeft size={14} /> Anterior
-                  </Link>
-                  <Link
-                    href={nextHref ?? '#'}
-                    aria-disabled={!nextHref}
-                    onClick={!nextHref ? (e: React.MouseEvent) => e.preventDefault() : undefined}
-                    className={cn(
-                      buttonVariants({ variant: 'outline' }),
-                      'inline-flex items-center gap-1.5',
-                      !nextHref && 'pointer-events-none opacity-40',
-                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={goNext}
+                    disabled={!hasNext || isFetching}
+                    className={cn('inline-flex items-center gap-1.5', !hasNext && 'opacity-40')}
                   >
                     Siguiente <ArrowRight size={14} />
-                  </Link>
+                  </Button>
                 </div>
               )}
             </>
