@@ -7,13 +7,13 @@ import { listings } from '../api/listings';
 import { useToken } from './token';
 import type { ListingResponse } from '../types';
 
-export function usePublicListings(params: { cursor?: string; q?: string; categoryId?: string }) {
+export function usePublicListings(params: { cursor?: string; q?: string; categoryId?: string; minPrice?: number; maxPrice?: number; sort?: string }) {
   return useQuery({
     queryKey: queryKeys.publicListings(params),
     queryFn: () =>
       params.categoryId
-        ? listings.listByCategory(params.categoryId, { cursor: params.cursor, limit: 12, search: params.q })
-        : listings.list({ cursor: params.cursor, limit: 12, search: params.q }),
+        ? listings.listByCategory(params.categoryId, { cursor: params.cursor, limit: 12, search: params.q, sort: params.sort, minPrice: params.minPrice, maxPrice: params.maxPrice })
+        : listings.list({ cursor: params.cursor, limit: 12, search: params.q, sort: params.sort, minPrice: params.minPrice, maxPrice: params.maxPrice }),
     staleTime: 60 * 1000,
     placeholderData: keepPreviousData,
   });

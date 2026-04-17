@@ -9,6 +9,8 @@ export const listings = {
     search?: string;
     categoryId?: string;
     sort?: string;
+    minPrice?: number;
+    maxPrice?: number;
   } = {}) => {
     const q = new URLSearchParams();
     if (params.cursor) q.set('cursor', params.cursor);
@@ -16,6 +18,8 @@ export const listings = {
     if (params.search) q.set('search', params.search);
     if (params.sort) q.set('sort', params.sort);
     if (params.categoryId) q.set('categoryId', params.categoryId);
+    if (params.minPrice != null) q.set('minPrice', String(params.minPrice));
+    if (params.maxPrice != null) q.set('maxPrice', String(params.maxPrice));
     return apiFetch<PaginationResponse<ListingResponse>>(`/listings?${q.toString()}`);
   },
 
@@ -65,11 +69,14 @@ export const listings = {
   count: () =>
     apiFetch<{ count: number }>('/listings/count'),
 
-  listByCategory: (categoryId: string, params: { cursor?: string; limit?: number; search?: string } = {}) => {
+  listByCategory: (categoryId: string, params: { cursor?: string; limit?: number; search?: string; sort?: string; minPrice?: number; maxPrice?: number } = {}) => {
     const q = new URLSearchParams();
     if (params.cursor) q.set('cursor', params.cursor);
     if (params.limit) q.set('limit', String(params.limit));
     if (params.search) q.set('search', params.search);
+    if (params.sort) q.set('sort', params.sort);
+    if (params.minPrice != null) q.set('minPrice', String(params.minPrice));
+    if (params.maxPrice != null) q.set('maxPrice', String(params.maxPrice));
     return apiFetch<PaginationResponse<ListingResponse>>(`/categories/${categoryId}/listings?${q.toString()}`);
   },
 };

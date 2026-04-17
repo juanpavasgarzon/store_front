@@ -8,7 +8,6 @@ import type { ContactRequestResponse } from '../types/interactions';
 interface UpdateProfilePayload {
   name: string;
   phone?: string | null;
-  whatsapp?: string | null;
   city?: string | null;
 }
 

@@ -15,6 +15,5 @@ export interface MeProfileResponse {
   role: string;
   permissions: string[];
   phone: string | null;
-  whatsapp: string | null;
   city: string | null;
 }

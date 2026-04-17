@@ -9,7 +9,6 @@ import { useToken } from './token';
 interface UpdateProfilePayload {
   name: string;
   phone?: string | null;
-  whatsapp?: string | null;
   city?: string | null;
 }
 
@@ -28,7 +27,6 @@ export function useProfile() {
           email: p.email,
           permissions: p.permissions ?? [],
           phone: p.phone ?? null,
-          whatsapp: p.whatsapp ?? null,
           city: p.city ?? null,
         };
       } catch {
@@ -55,7 +53,6 @@ export function useUpdateProfile() {
         role: updated.role,
         permissions: updated.permissions ?? [],
         phone: updated.phone ?? null,
-        whatsapp: updated.whatsapp ?? null,
         city: updated.city ?? null,
       });
     },

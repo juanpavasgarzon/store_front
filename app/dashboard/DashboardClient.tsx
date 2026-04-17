@@ -38,7 +38,6 @@ interface MeProfileResponse {
   email: string;
   role: string;
   phone: string | null;
-  whatsapp: string | null;
   city: string | null;
 }
 

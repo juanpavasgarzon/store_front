@@ -11,6 +11,13 @@ import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
+const SORT_OPTIONS = [
+  { value: '', label: 'Relevancia' },
+  { value: '-createdAt', label: 'Más recientes' },
+  { value: 'price', label: 'Precio: menor a mayor' },
+  { value: '-price', label: 'Precio: mayor a menor' },
+] as const;
+
 export default function ListingsClient() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -18,38 +25,81 @@ export default function ListingsClient() {
   const categoryId = sp.get('categoryId') ?? undefined;
   const cursor = sp.get('cursor') ?? undefined;
   const qFromUrl = sp.get('q') ?? '';
+  const sortFromUrl = sp.get('sort') ?? '';
+  const minPriceFromUrl = sp.get('minPrice') ?? '';
+  const maxPriceFromUrl = sp.get('maxPrice') ?? '';
 
-  // Local controlled input — follows URL on external nav, drives debounced URL update on typing
+  // Local controlled inputs
   const [inputValue, setInputValue] = useState(qFromUrl);
-  const debouncedSearch = useDebounce(inputValue, 400);
+  const [minPriceInput, setMinPriceInput] = useState(minPriceFromUrl);
+  const [maxPriceInput, setMaxPriceInput] = useState(maxPriceFromUrl);
 
-  // Track whether the last URL-change was from us (to avoid syncing back to input)
+  const debouncedSearch = useDebounce(inputValue, 400);
+  const debouncedMinPrice = useDebounce(minPriceInput, 600);
+  const debouncedMaxPrice = useDebounce(maxPriceInput, 600);
+
+  // Track whether the last URL-change was from us (to avoid syncing back to inputs)
   const ownNavRef = useRef(false);
 
-  // Sync input when URL changes externally (e.g., category link click resets q)
+  // Sync inputs when URL changes externally
   useEffect(() => {
     if (ownNavRef.current) {
       ownNavRef.current = false;
       return;
     }
     setInputValue(qFromUrl);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qFromUrl]);
+    setMinPriceInput(minPriceFromUrl);
+    setMaxPriceInput(maxPriceFromUrl);
+  }, [qFromUrl, minPriceFromUrl, maxPriceFromUrl]);
 
-  // Push debounced search to URL (without full reload, scroll preserved)
-  useEffect(() => {
-    if (debouncedSearch === qFromUrl) return;
-    ownNavRef.current = true;
+  const buildParams = (overrides: Record<string, string | undefined> = {}) => {
+    const base: Record<string, string | undefined> = {
+      categoryId,
+      q: qFromUrl || undefined,
+      sort: sortFromUrl || undefined,
+      minPrice: minPriceFromUrl || undefined,
+      maxPrice: maxPriceFromUrl || undefined,
+      ...overrides,
+    };
     const p = new URLSearchParams();
-    if (categoryId) p.set('categoryId', categoryId);
-    if (debouncedSearch) p.set('q', debouncedSearch);
-    // reset cursor on new search
+    for (const [k, v] of Object.entries(base)) {
+      if (v) p.set(k, v);
+    }
+    return p;
+  };
+
+  const pushUrl = (overrides: Record<string, string | undefined>) => {
+    ownNavRef.current = true;
+    const p = buildParams(overrides);
     const qs = p.toString();
     router.replace(`/listings${qs ? `?${qs}` : ''}`, { scroll: false });
+  };
+
+  // Push debounced search to URL
+  useEffect(() => {
+    if (debouncedSearch === qFromUrl) return;
+    pushUrl({ q: debouncedSearch || undefined, cursor: undefined });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  const { data, isFetching } = usePublicListings({ cursor, q: qFromUrl, categoryId });
+  // Push debounced price range to URL
+  useEffect(() => {
+    if (debouncedMinPrice === minPriceFromUrl && debouncedMaxPrice === maxPriceFromUrl) return;
+    pushUrl({ minPrice: debouncedMinPrice || undefined, maxPrice: debouncedMaxPrice || undefined, cursor: undefined });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedMinPrice, debouncedMaxPrice]);
+
+  const minPriceNum = minPriceFromUrl ? Number(minPriceFromUrl) : undefined;
+  const maxPriceNum = maxPriceFromUrl ? Number(maxPriceFromUrl) : undefined;
+
+  const { data, isFetching } = usePublicListings({
+    cursor,
+    q: qFromUrl,
+    categoryId,
+    sort: sortFromUrl || undefined,
+    minPrice: minPriceNum,
+    maxPrice: maxPriceNum,
+  });
   const { data: catsRes } = usePublicCategories();
 
   const listings = data?.data ?? [];
@@ -64,10 +114,7 @@ export default function ListingsClient() {
     : 'Todos los anuncios';
 
   const baseHref = (extraCursor?: string | null) => {
-    const p = new URLSearchParams();
-    if (categoryId) p.set('categoryId', categoryId);
-    if (qFromUrl) p.set('q', qFromUrl);
-    if (extraCursor) p.set('cursor', extraCursor);
+    const p = buildParams({ cursor: extraCursor ?? undefined });
     const qs = p.toString();
     return `/listings${qs ? `?${qs}` : ''}`;
   };
@@ -99,6 +146,7 @@ export default function ListingsClient() {
       <div className="layout-sidebar">
         {/* ── Sidebar ── */}
         <aside className="sidebar-filters">
+          {/* Search */}
           <div className="mb-7">
             <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-2.5">
               Buscar
@@ -109,19 +157,85 @@ export default function ListingsClient() {
                 type="search"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Palabras clave, categoría…"
+                placeholder="Palabras clave, atributos…"
                 className="pl-9 text-[13px] h-9"
               />
             </div>
           </div>
 
+          {/* Sort */}
+          <div className="mb-7">
+            <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-2.5">
+              Ordenar por
+            </p>
+            <div className="flex flex-col gap-0.5">
+              {SORT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => pushUrl({ sort: opt.value || undefined, cursor: undefined })}
+                  className={cn(
+                    'px-3 py-2 rounded-md text-[13px] text-left border transition-all duration-150',
+                    sortFromUrl === opt.value
+                      ? 'text-foreground bg-[var(--bg-elevated)] border-[var(--border-light)]'
+                      : 'text-muted-foreground bg-transparent border-transparent hover:text-foreground',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Price range */}
+          <div className="mb-7">
+            <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-2.5">
+              Precio
+            </p>
+            <div className="flex gap-2 items-center">
+              <Input
+                type="number"
+                min={0}
+                value={minPriceInput}
+                onChange={(e) => setMinPriceInput(e.target.value)}
+                placeholder="Mín"
+                className="text-[13px] h-9 w-full"
+              />
+              <span className="text-muted-foreground text-[12px] shrink-0">–</span>
+              <Input
+                type="number"
+                min={0}
+                value={maxPriceInput}
+                onChange={(e) => setMaxPriceInput(e.target.value)}
+                placeholder="Máx"
+                className="text-[13px] h-9 w-full"
+              />
+            </div>
+            {(minPriceFromUrl || maxPriceFromUrl) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMinPriceInput('');
+                  setMaxPriceInput('');
+                  pushUrl({ minPrice: undefined, maxPrice: undefined, cursor: undefined });
+                }}
+                className="mt-2 text-[11px] text-muted-foreground hover:text-foreground underline"
+              >
+                Limpiar precio
+              </button>
+            )}
+          </div>
+
+          {/* Category */}
           <div>
             <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-2.5">
               Categoría
             </p>
             <div className="flex flex-col gap-0.5">
               <Link
-                href={qFromUrl ? `/listings?q=${encodeURIComponent(qFromUrl)}` : '/listings'}
+                href={buildParams({ categoryId: undefined, cursor: undefined }).toString()
+                  ? `/listings?${buildParams({ categoryId: undefined, cursor: undefined }).toString()}`
+                  : '/listings'}
                 className={cn(
                   'px-3 py-2 rounded-md text-[13px] no-underline border transition-all duration-150',
                   !categoryId
@@ -134,7 +248,7 @@ export default function ListingsClient() {
               {cats.map((cat) => (
                 <Link
                   key={cat.id}
-                  href={`/listings?categoryId=${cat.id}${qFromUrl ? `&q=${encodeURIComponent(qFromUrl)}` : ''}`}
+                  href={`/listings?${buildParams({ categoryId: cat.id, cursor: undefined }).toString()}`}
                   className={cn(
                     'px-3 py-2 rounded-md text-[13px] no-underline border transition-all duration-150',
                     categoryId === cat.id

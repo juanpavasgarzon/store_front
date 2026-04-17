@@ -23,6 +23,6 @@ export const queryKeys = {
   categories: ['categories'] as const,
 
   // Public listings browse
-  publicListings: (params: { cursor?: string; q?: string; categoryId?: string }) =>
-    ['publicListings', params.categoryId ?? '', params.q ?? '', params.cursor ?? ''] as const,
+  publicListings: (params: { cursor?: string; q?: string; categoryId?: string; minPrice?: number; maxPrice?: number; sort?: string }) =>
+    ['publicListings', params.categoryId ?? '', params.q ?? '', params.cursor ?? '', params.minPrice ?? '', params.maxPrice ?? '', params.sort ?? ''] as const,
 } as const;

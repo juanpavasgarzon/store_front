@@ -54,7 +54,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
   };
   const statusLabel = statusLabels[listing.status] ?? listing.status;
 
-  const whatsappNumber = listing.seller?.whatsapp?.replace(/\D/g, '');
+  const whatsappNumber = listing.seller?.phone?.replace(/\D/g, '');
   const whatsappUrl = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hola, me interesa tu anuncio: ${listing.title}`)}`
     : null;

@@ -6,8 +6,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useProfile, useUpdateProfile } from '../lib/hooks';
 import { clearTokens, getRefreshToken } from '../lib/api/client';
 import { auth } from '../lib/api/auth';
+import { sileo } from 'sileo';
 import UserAvatar from '../components/UserAvatar';
-import ConfirmModal from '../components/ConfirmModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,14 +16,13 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
-  Mail, Hash, Phone, MessageSquare, MapPin,
+  Mail, Hash, Phone, MapPin,
   Pencil, Save, X, LogOut,
 } from 'lucide-react';
 
 interface ProfileFormState {
   name: string;
   phone: string;
-  whatsapp: string;
   city: string;
 }
 
@@ -40,9 +39,8 @@ export default function ProfileClient() {
   const queryClient = useQueryClient();
   const [mounted, setMounted] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<ProfileFormState>({ name: '', phone: '', whatsapp: '', city: '' });
+  const [form, setForm] = useState<ProfileFormState>({ name: '', phone: '', city: '' });
   const [msg, setMsg] = useState('');
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
@@ -72,7 +70,6 @@ export default function ProfileClient() {
     setForm({
       name: profile.name,
       phone: profile.phone ?? '',
-      whatsapp: profile.whatsapp ?? '',
       city: profile.city ?? '',
     });
     setMsg('');
@@ -84,7 +81,6 @@ export default function ProfileClient() {
       {
         name: form.name || profile.name,
         phone: form.phone || null,
-        whatsapp: form.whatsapp || null,
         city: form.city || null,
       },
       {
@@ -108,7 +104,6 @@ export default function ProfileClient() {
     { icon: <Mail size={13} />, label: 'Correo electrónico', value: profile.email },
     { icon: <Hash size={13} />, label: 'ID de cuenta', value: profile.id },
     ...(profile.phone ? [{ icon: <Phone size={13} />, label: 'Teléfono', value: profile.phone }] : []),
-    ...(profile.whatsapp ? [{ icon: <MessageSquare size={13} />, label: 'WhatsApp', value: profile.whatsapp }] : []),
     ...(profile.city ? [{ icon: <MapPin size={13} />, label: 'Ciudad', value: profile.city }] : []),
   ];
 
@@ -175,7 +170,13 @@ export default function ProfileClient() {
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => setShowLogoutConfirm(true)}
+            onClick={() =>
+              sileo.action({
+                title: '¿Cerrar sesión?',
+                description: 'Se cerrará tu sesión en este dispositivo.',
+                button: { title: 'Cerrar sesión', onClick: handleLogout },
+              })
+            }
             className="w-full justify-start text-[13px]"
           >
             <LogOut size={14} /> Cerrar sesión
@@ -237,16 +238,6 @@ export default function ProfileClient() {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <Label className={labelClass}>WhatsApp</Label>
-                    <Input
-                      type="tel"
-                      value={form.whatsapp}
-                      onChange={(e) => setForm((p) => ({ ...p, whatsapp: e.target.value }))}
-                      placeholder="+57 300 000 0000"
-                      className="h-10 text-[13px]"
-                    />
-                  </div>
                 </div>
 
                 <div className="flex gap-2 mt-7">
@@ -307,16 +298,6 @@ export default function ProfileClient() {
         </Card>
       </div>
 
-      <ConfirmModal
-        open={showLogoutConfirm}
-        title="¿Cerrar sesión?"
-        description="Se cerrará tu sesión en este dispositivo."
-        confirmLabel="Cerrar sesión"
-        cancelLabel="Cancelar"
-        danger
-        onConfirm={handleLogout}
-        onCancel={() => setShowLogoutConfirm(false)}
-      />
     </div>
   );
 }
