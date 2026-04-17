@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { listings, categories } from './lib/api';
+
+export const revalidate = 0;
 import type { ListingResponse, CategoryResponse } from './lib/types';
 import ListingCard from './components/ListingCard';
 import Navbar from './components/Navbar';
