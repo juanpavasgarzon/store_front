@@ -25,6 +25,7 @@ export function useMyListings(cursor?: string) {
     queryKey: queryKeys.myListings(cursor),
     queryFn: () => me.getListings(token!, cursor, 12),
     enabled: !!token,
+    placeholderData: keepPreviousData,
   });
 }
 

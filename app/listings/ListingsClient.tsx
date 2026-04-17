@@ -201,17 +201,31 @@ export default function ListingsClient() {
               </div>
 
               {(prevHref || nextHref) && (
-                <div className="flex justify-center gap-3">
-                  {prevHref ? (
-                    <Link href={prevHref} className={cn(buttonVariants({ variant: 'outline' }), 'inline-flex items-center gap-1.5')}>
-                      <ArrowLeft size={14} /> Anterior
-                    </Link>
-                  ) : <span />}
-                  {nextHref && (
-                    <Link href={nextHref} className={cn(buttonVariants({ variant: 'outline' }), 'inline-flex items-center gap-1.5')}>
-                      Siguiente <ArrowRight size={14} />
-                    </Link>
-                  )}
+                <div className="flex items-center justify-center gap-3">
+                  <Link
+                    href={prevHref ?? '#'}
+                    aria-disabled={!prevHref}
+                    onClick={!prevHref ? (e: React.MouseEvent) => e.preventDefault() : undefined}
+                    className={cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'inline-flex items-center gap-1.5',
+                      !prevHref && 'pointer-events-none opacity-40',
+                    )}
+                  >
+                    <ArrowLeft size={14} /> Anterior
+                  </Link>
+                  <Link
+                    href={nextHref ?? '#'}
+                    aria-disabled={!nextHref}
+                    onClick={!nextHref ? (e: React.MouseEvent) => e.preventDefault() : undefined}
+                    className={cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'inline-flex items-center gap-1.5',
+                      !nextHref && 'pointer-events-none opacity-40',
+                    )}
+                  >
+                    Siguiente <ArrowRight size={14} />
+                  </Link>
                 </div>
               )}
             </>

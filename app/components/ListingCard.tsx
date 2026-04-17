@@ -60,12 +60,12 @@ export default function ListingCard({ listing, style, className }: ListingCardPr
   return (
     <Link
       href={`/listings/${listing.id}`}
-      className={cn('block no-underline group', className)}
+      className={cn('block no-underline group h-full', className)}
       style={style}
     >
-      <Card className="overflow-hidden transition-all duration-200 hover:border-[var(--border-accent)] hover:shadow-lg">
+      <Card className="overflow-hidden transition-all duration-200 hover:border-[var(--border-accent)] hover:shadow-lg h-full flex flex-col">
         {/* Photo */}
-        <div className="relative h-[200px] bg-[var(--bg-elevated)] overflow-hidden">
+        <div className="relative h-[200px] bg-[var(--bg-elevated)] overflow-hidden flex-shrink-0">
           {photo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -96,31 +96,36 @@ export default function ListingCard({ listing, style, className }: ListingCardPr
         </div>
 
         {/* Content */}
-        <CardContent className="px-[18px] pt-4 pb-5">
-          {/* Category */}
-          {listing.category?.name && (
-            <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-primary mb-1.5">
-              {listing.category.name}
-            </p>
-          )}
+        <CardContent className="px-[18px] pt-4 pb-5 flex flex-col flex-1">
+          {/* Category — reserved slot so cards without category stay aligned */}
+          <div className="h-[18px] mb-1.5">
+            {listing.category?.name && (
+              <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-primary leading-none">
+                {listing.category.name}
+              </p>
+            )}
+          </div>
 
-          {/* Title */}
+          {/* Title — fixed 2-line height regardless of actual line count */}
           <h3
-            className="text-foreground mb-2 leading-snug line-clamp-2"
+            className="text-foreground leading-snug line-clamp-2 overflow-hidden h-[2.9rem]"
             style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 400 }}
           >
             {listing.title}
           </h3>
 
+          {/* Spacer pushes price/footer to bottom */}
+          <div className="flex-1" />
+
           {/* Price + Location */}
-          <div className="flex items-end justify-between gap-2">
-            <span className="price-tag">
+          <div className="flex items-end justify-between gap-2 mt-2">
+            <span className="price-tag flex-shrink-0">
               {formatPrice(listing.price)}
             </span>
 
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <MapPin size={11} />
-              {listing.location}
+            <span className="text-[11px] text-muted-foreground flex items-center gap-1 min-w-0">
+              <MapPin size={11} className="flex-shrink-0" />
+              <span className="truncate">{listing.location}</span>
             </span>
           </div>
 

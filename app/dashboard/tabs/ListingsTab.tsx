@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   ImageOff, Eye, Calendar, Heart, Mail,
-  Plus, ChevronUp, ChevronDown, X, Trash2, BarChart2, ExternalLink,
+  Plus, ChevronUp, ChevronDown, X, Trash2, BarChart2, ExternalLink, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 import { useMyListings, useListingStats, useDeleteListing } from '../../lib/hooks';
 import { resolveMediaUrl } from '../../lib/api';
@@ -139,14 +139,36 @@ export function ListingStatsRow({ listing }: { listing: ListingResponse }) {
 }
 
 export default function ListingsTab() {
-  const { data: listingsData, isLoading } = useMyListings();
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([]);
+
+  const { data: listingsData, isLoading, isFetching } = useMyListings(cursor);
   const myListings = listingsData?.data ?? [];
+  const meta = listingsData?.meta;
+
+  const hasNext = !!meta?.hasNextPage && !!meta.nextCursor;
+  const hasPrev = cursorHistory.length > 0;
+
+  const goNext = () => {
+    if (!meta?.nextCursor) return;
+    setCursorHistory((h) => [...h, cursor]);
+    setCursor(meta.nextCursor);
+  };
+
+  const goPrev = () => {
+    setCursorHistory((h) => {
+      const prev = h[h.length - 1];
+      setCursor(prev);
+      return h.slice(0, -1);
+    });
+  };
 
   return (
     <>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <p className="text-[14px] text-muted-foreground">
           {myListings.length} anuncio{myListings.length !== 1 ? 's' : ''}
+          {isFetching && !isLoading && <span className="ml-2 opacity-50">…</span>}
         </p>
         <Link href="/listings/new" className={cn(buttonVariants({ size: 'sm' }))}>
           <Plus size={14} /> Nuevo anuncio
@@ -156,9 +178,37 @@ export default function ListingsTab() {
       {isLoading ? (
         <p className="text-muted-foreground text-[13px]">Cargando…</p>
       ) : myListings.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {myListings.map((l) => <ListingStatsRow key={l.id} listing={l} />)}
-        </div>
+        <>
+          <div
+            className="flex flex-col gap-3"
+            style={{ opacity: isFetching ? 0.55 : 1, transition: 'opacity 0.18s ease' }}
+          >
+            {myListings.map((l) => <ListingStatsRow key={l.id} listing={l} />)}
+          </div>
+
+          {(hasPrev || hasNext) && (
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goPrev}
+                disabled={!hasPrev || isFetching}
+                className={cn('inline-flex items-center gap-1.5', !hasPrev && 'opacity-40')}
+              >
+                <ArrowLeft size={14} /> Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goNext}
+                disabled={!hasNext || isFetching}
+                className={cn('inline-flex items-center gap-1.5', !hasNext && 'opacity-40')}
+              >
+                Siguiente <ArrowRight size={14} />
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <EmptyState
           icon={<ImageOff size={32} />}
